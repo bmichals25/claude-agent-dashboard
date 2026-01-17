@@ -1,16 +1,34 @@
 import { create } from 'zustand'
-import type { Agent, AgentId, Task, ChatMessage, AgentEvent, AgentStatus } from './types'
+import type { 
+  Agent, 
+  AgentId, 
+  Task, 
+  ChatMessage, 
+  AgentEvent, 
+  AgentStatus,
+  Project,
+  StreamEntry,
+  TaskSortBy,
+  TaskSortOrder,
+  TaskFilters,
+} from './types'
 import { getAllAgents, getAgentConnections } from './agentCatalog'
 
 interface DashboardState {
   // Agents
   agents: Agent[]
   connections: { from: AgentId; to: AgentId }[]
-  activeConnections: Set<string> // "from-to" format for highlighting
+  activeConnections: Set<string>
+  
+  // Projects
+  projects: Project[]
   
   // Tasks
   tasks: Task[]
   taskHistory: Task[]
+  taskSortBy: TaskSortBy
+  taskSortOrder: TaskSortOrder
+  taskFilters: TaskFilters
   
   // Chat
   messages: ChatMessage[]
@@ -21,19 +39,42 @@ interface DashboardState {
   
   // UI State
   selectedAgentId: AgentId | null
+  selectedTaskId: string | null
   showTaskBoard: boolean
   
-  // Actions
+  // Agent Actions
   updateAgentStatus: (agentId: AgentId, status: AgentStatus, task?: Task) => void
+  
+  // Project Actions
+  addProject: (project: Project) => void
+  updateProject: (projectId: string, updates: Partial<Project>) => void
+  
+  // Task Actions
   addTask: (task: Task) => void
   updateTask: (taskId: string, updates: Partial<Task>) => void
   delegateTask: (fromAgentId: AgentId, toAgentId: AgentId, task: Task) => void
   completeTask: (taskId: string, output?: string) => void
+  addStreamEntry: (taskId: string, entry: StreamEntry) => void
+  updateTaskProgress: (taskId: string, progress: number, currentStep?: string) => void
+  
+  // Task Sorting/Filtering
+  setTaskSortBy: (sortBy: TaskSortBy) => void
+  setTaskSortOrder: (order: TaskSortOrder) => void
+  setTaskFilters: (filters: TaskFilters) => void
+  clearTaskFilters: () => void
+  getSortedFilteredTasks: () => Task[]
+  
+  // Chat Actions
   addMessage: (message: ChatMessage) => void
-  addEvent: (event: AgentEvent) => void
-  setSelectedAgent: (agentId: AgentId | null) => void
-  toggleTaskBoard: () => void
   setStreaming: (isStreaming: boolean) => void
+  
+  // Event Actions
+  addEvent: (event: AgentEvent) => void
+  
+  // UI Actions
+  setSelectedAgent: (agentId: AgentId | null) => void
+  setSelectedTask: (taskId: string | null) => void
+  toggleTaskBoard: () => void
   highlightConnection: (from: AgentId, to: AgentId) => void
   clearConnectionHighlight: (from: AgentId, to: AgentId) => void
   reset: () => void
@@ -47,15 +88,20 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   agents: initialAgents,
   connections: initialConnections,
   activeConnections: new Set(),
+  projects: [],
   tasks: [],
   taskHistory: [],
+  taskSortBy: 'created',
+  taskSortOrder: 'desc',
+  taskFilters: {},
   messages: [],
   isStreaming: false,
   eventLog: [],
   selectedAgentId: null,
+  selectedTaskId: null,
   showTaskBoard: false,
 
-  // Actions
+  // Agent Actions
   updateAgentStatus: (agentId, status, task) => {
     set(state => ({
       agents: state.agents.map(agent =>
@@ -66,17 +112,38 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }))
   },
 
-  addTask: (task) => {
+  // Project Actions
+  addProject: (project) => {
     set(state => ({
-      tasks: [...state.tasks, task],
+      projects: [...state.projects, project],
+    }))
+  },
+
+  updateProject: (projectId, updates) => {
+    set(state => ({
+      projects: state.projects.map(p =>
+        p.id === projectId ? { ...p, ...updates, updatedAt: new Date() } : p
+      ),
+    }))
+  },
+
+  // Task Actions
+  addTask: (task) => {
+    const taskWithDefaults: Task = {
+      ...task,
+      streamOutput: task.streamOutput || [],
+      progress: task.progress || 0,
+    }
+    
+    set(state => ({
+      tasks: [...state.tasks, taskWithDefaults],
     }))
     
-    // Log event
     get().addEvent({
       type: 'task_created',
       timestamp: new Date(),
       agentId: task.assignedTo || 'ceo',
-      task,
+      task: taskWithDefaults,
     })
   },
 
@@ -102,14 +169,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       tasks: state.tasks.map(t => (t.id === task.id ? updatedTask : t)),
     }))
 
-    // Update agent statuses
     get().updateAgentStatus(fromAgentId, 'delegating')
     get().updateAgentStatus(toAgentId, 'working', updatedTask)
-
-    // Highlight connection
     get().highlightConnection(fromAgentId, toAgentId)
 
-    // Log event
     get().addEvent({
       type: 'task_delegated',
       timestamp: new Date(),
@@ -119,7 +182,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       toAgent: toAgentId,
     })
 
-    // Clear highlight after animation
     setTimeout(() => {
       get().clearConnectionHighlight(fromAgentId, toAgentId)
       get().updateAgentStatus(fromAgentId, 'idle')
@@ -136,6 +198,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       completedAt: new Date(),
       updatedAt: new Date(),
       output,
+      progress: 100,
     }
 
     set(state => ({
@@ -143,7 +206,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       taskHistory: [...state.taskHistory, completedTask],
     }))
 
-    // Update agent status
     if (task.assignedTo) {
       get().updateAgentStatus(task.assignedTo, 'completed')
       setTimeout(() => {
@@ -151,7 +213,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }, 1500)
     }
 
-    // Log event
     get().addEvent({
       type: 'task_completed',
       timestamp: new Date(),
@@ -160,29 +221,114 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     })
   },
 
+  addStreamEntry: (taskId, entry) => {
+    set(state => ({
+      tasks: state.tasks.map(task =>
+        task.id === taskId
+          ? { ...task, streamOutput: [...task.streamOutput, entry] }
+          : task
+      ),
+    }))
+
+    get().addEvent({
+      type: 'stream_output',
+      timestamp: new Date(),
+      agentId: entry.agentId,
+      streamEntry: entry,
+    })
+  },
+
+  updateTaskProgress: (taskId, progress, currentStep) => {
+    set(state => ({
+      tasks: state.tasks.map(task =>
+        task.id === taskId
+          ? { ...task, progress, currentStep: currentStep ?? task.currentStep }
+          : task
+      ),
+    }))
+  },
+
+  // Sorting & Filtering
+  setTaskSortBy: (sortBy) => set({ taskSortBy: sortBy }),
+  setTaskSortOrder: (order) => set({ taskSortOrder: order }),
+  setTaskFilters: (filters) => set(state => ({ 
+    taskFilters: { ...state.taskFilters, ...filters } 
+  })),
+  clearTaskFilters: () => set({ taskFilters: {} }),
+
+  getSortedFilteredTasks: () => {
+    const { tasks, taskSortBy, taskSortOrder, taskFilters, agents, projects } = get()
+    
+    // Filter
+    let filtered = tasks.filter(task => {
+      if (taskFilters.agentId && task.assignedTo !== taskFilters.agentId) return false
+      if (taskFilters.projectId && task.projectId !== taskFilters.projectId) return false
+      if (taskFilters.status && task.status !== taskFilters.status) return false
+      if (taskFilters.priority && task.priority !== taskFilters.priority) return false
+      return true
+    })
+
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0
+      
+      switch (taskSortBy) {
+        case 'created':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          break
+        case 'updated':
+          comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+          break
+        case 'priority': {
+          const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
+          comparison = priorityOrder[a.priority] - priorityOrder[b.priority]
+          break
+        }
+        case 'agent': {
+          const agentA = agents.find(ag => ag.id === a.assignedTo)?.displayName || ''
+          const agentB = agents.find(ag => ag.id === b.assignedTo)?.displayName || ''
+          comparison = agentA.localeCompare(agentB)
+          break
+        }
+        case 'project': {
+          const projectA = projects.find(p => p.id === a.projectId)?.name || ''
+          const projectB = projects.find(p => p.id === b.projectId)?.name || ''
+          comparison = projectA.localeCompare(projectB)
+          break
+        }
+        case 'status': {
+          const statusOrder = { pending: 0, in_progress: 1, delegated: 2, blocked: 3, completed: 4 }
+          comparison = statusOrder[a.status] - statusOrder[b.status]
+          break
+        }
+      }
+      
+      return taskSortOrder === 'asc' ? comparison : -comparison
+    })
+
+    return filtered
+  },
+
+  // Chat Actions
   addMessage: (message) => {
     set(state => ({
       messages: [...state.messages, message],
     }))
   },
 
+  setStreaming: (isStreaming) => set({ isStreaming }),
+
+  // Event Actions
   addEvent: (event) => {
     set(state => ({
-      eventLog: [event, ...state.eventLog].slice(0, 100), // Keep last 100 events
+      eventLog: [event, ...state.eventLog].slice(0, 100),
     }))
   },
 
-  setSelectedAgent: (agentId) => {
-    set({ selectedAgentId: agentId })
-  },
-
-  toggleTaskBoard: () => {
-    set(state => ({ showTaskBoard: !state.showTaskBoard }))
-  },
-
-  setStreaming: (isStreaming) => {
-    set({ isStreaming })
-  },
+  // UI Actions
+  setSelectedAgent: (agentId) => set({ selectedAgentId: agentId }),
+  setSelectedTask: (taskId) => set({ selectedTaskId: taskId }),
+  toggleTaskBoard: () => set(state => ({ showTaskBoard: !state.showTaskBoard })),
 
   highlightConnection: (from, to) => {
     const key = `${from}-${to}`
@@ -205,12 +351,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       agents: initialAgents,
       connections: initialConnections,
       activeConnections: new Set(),
+      projects: [],
       tasks: [],
       taskHistory: [],
+      taskSortBy: 'created',
+      taskSortOrder: 'desc',
+      taskFilters: {},
       messages: [],
       isStreaming: false,
       eventLog: [],
       selectedAgentId: null,
+      selectedTaskId: null,
       showTaskBoard: false,
     })
   },
