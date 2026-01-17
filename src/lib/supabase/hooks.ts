@@ -30,7 +30,7 @@ export function useSupabaseSync() {
     if (storedSessionId) {
       // Verify session exists in DB
       const { data } = await supabase
-        .from('sessions')
+        .from('dashboard_sessions')
         .select('id')
         .eq('id', storedSessionId)
         .single()
@@ -43,7 +43,7 @@ export function useSupabaseSync() {
 
     // Create new session
     const { data, error } = await supabase
-      .from('sessions')
+      .from('dashboard_sessions')
       .insert({ name: `Session ${new Date().toLocaleDateString()}` })
       .select()
       .single()
@@ -66,7 +66,7 @@ export function useSupabaseSync() {
 
     // Load messages
     const { data: messagesData } = await supabase
-      .from('messages')
+      .from('dashboard_messages')
       .select('*')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true })
@@ -85,7 +85,7 @@ export function useSupabaseSync() {
 
     // Load projects
     const { data: projectsData } = await supabase
-      .from('projects')
+      .from('dashboard_projects')
       .select('*')
       .eq('session_id', sessionId)
 
@@ -105,16 +105,16 @@ export function useSupabaseSync() {
 
     // Load tasks with stream entries
     const { data: tasksData } = await supabase
-      .from('tasks')
+      .from('dashboard_tasks')
       .select(`
         *,
-        stream_entries (*)
+        dashboard_stream_entries (*)
       `)
       .eq('session_id', sessionId)
 
     if (tasksData) {
       tasksData.forEach((task: any) => {
-        const streamOutput: StreamEntry[] = (task.stream_entries || []).map((entry: any) => ({
+        const streamOutput: StreamEntry[] = (task.dashboard_stream_entries || []).map((entry: any) => ({
           id: entry.id,
           timestamp: new Date(entry.created_at),
           agentId: entry.agent_id as AgentId,
@@ -142,7 +142,7 @@ export function useSupabaseSync() {
 
     // Load events
     const { data: eventsData } = await supabase
-      .from('events')
+      .from('dashboard_events')
       .select('*')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true })
@@ -167,7 +167,7 @@ export function useSupabaseSync() {
   const saveMessage = useCallback(async (message: Message) => {
     if (!isSupabaseConfigured() || !currentSessionId) return
 
-    await supabase.from('messages').insert({
+    await supabase.from('dashboard_messages').insert({
       id: message.id,
       session_id: currentSessionId,
       role: message.role,
@@ -180,7 +180,7 @@ export function useSupabaseSync() {
   const saveTask = useCallback(async (task: Task) => {
     if (!isSupabaseConfigured() || !currentSessionId) return
 
-    await supabase.from('tasks').insert({
+    await supabase.from('dashboard_tasks').insert({
       id: task.id,
       session_id: currentSessionId,
       project_id: task.projectId || null,
@@ -212,14 +212,14 @@ export function useSupabaseSync() {
     if (updates.currentStep !== undefined) dbUpdates.current_step = updates.currentStep
     if (updates.projectId !== undefined) dbUpdates.project_id = updates.projectId
 
-    await supabase.from('tasks').update(dbUpdates).eq('id', taskId)
+    await supabase.from('dashboard_tasks').update(dbUpdates).eq('id', taskId)
   }, [])
 
   // Save stream entry to Supabase
   const saveStreamEntry = useCallback(async (taskId: string, entry: StreamEntry) => {
     if (!isSupabaseConfigured()) return
 
-    await supabase.from('stream_entries').insert({
+    await supabase.from('dashboard_stream_entries').insert({
       id: entry.id,
       task_id: taskId,
       agent_id: entry.agentId,
@@ -232,7 +232,7 @@ export function useSupabaseSync() {
   const saveProject = useCallback(async (project: Project) => {
     if (!isSupabaseConfigured() || !currentSessionId) return
 
-    await supabase.from('projects').insert({
+    await supabase.from('dashboard_projects').insert({
       id: project.id,
       session_id: currentSessionId,
       name: project.name,
@@ -246,7 +246,7 @@ export function useSupabaseSync() {
   const saveEvent = useCallback(async (event: AgentEvent) => {
     if (!isSupabaseConfigured() || !currentSessionId) return
 
-    await supabase.from('events').insert({
+    await supabase.from('dashboard_events').insert({
       id: event.id,
       session_id: currentSessionId,
       type: event.type,
@@ -265,7 +265,7 @@ export function useSupabaseSync() {
       .channel('dashboard_changes')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'tasks' },
+        { event: '*', schema: 'public', table: 'dashboard_tasks' },
         (payload) => {
           if (payload.eventType === 'UPDATE') {
             const task = payload.new as any
@@ -279,7 +279,7 @@ export function useSupabaseSync() {
       )
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'stream_entries' },
+        { event: 'INSERT', schema: 'public', table: 'dashboard_stream_entries' },
         (payload) => {
           const entry = payload.new as any
           addStreamEntry(entry.task_id, {

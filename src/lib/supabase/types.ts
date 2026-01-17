@@ -9,7 +9,7 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      sessions: {
+      dashboard_sessions: {
         Row: {
           id: string
           created_at: string
@@ -29,7 +29,7 @@ export interface Database {
           name?: string | null
         }
       }
-      messages: {
+      dashboard_messages: {
         Row: {
           id: string
           session_id: string
@@ -55,7 +55,7 @@ export interface Database {
           agent_id?: string | null
         }
       }
-      projects: {
+      dashboard_projects: {
         Row: {
           id: string
           session_id: string
@@ -87,7 +87,7 @@ export interface Database {
           color?: string
         }
       }
-      tasks: {
+      dashboard_tasks: {
         Row: {
           id: string
           session_id: string
@@ -134,7 +134,7 @@ export interface Database {
           current_step?: string | null
         }
       }
-      stream_entries: {
+      dashboard_stream_entries: {
         Row: {
           id: string
           task_id: string
@@ -160,7 +160,7 @@ export interface Database {
           content?: string
         }
       }
-      events: {
+      dashboard_events: {
         Row: {
           id: string
           session_id: string
