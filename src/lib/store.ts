@@ -3,7 +3,7 @@ import type {
   Agent, 
   AgentId, 
   Task, 
-  ChatMessage, 
+  Message, 
   AgentEvent, 
   AgentStatus,
   Project,
@@ -31,11 +31,11 @@ interface DashboardState {
   taskFilters: TaskFilters
   
   // Chat
-  messages: ChatMessage[]
+  messages: Message[]
   isStreaming: boolean
   
   // Events
-  eventLog: AgentEvent[]
+  events: AgentEvent[]
   
   // UI State
   selectedAgentId: AgentId | null
@@ -65,7 +65,7 @@ interface DashboardState {
   getSortedFilteredTasks: () => Task[]
   
   // Chat Actions
-  addMessage: (message: ChatMessage) => void
+  addMessage: (message: Message) => void
   setStreaming: (isStreaming: boolean) => void
   
   // Event Actions
@@ -96,7 +96,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   taskFilters: {},
   messages: [],
   isStreaming: false,
-  eventLog: [],
+  events: [],
   selectedAgentId: null,
   selectedTaskId: null,
   showTaskBoard: false,
@@ -140,10 +140,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }))
     
     get().addEvent({
+      id: crypto.randomUUID(),
       type: 'task_created',
       timestamp: new Date(),
       agentId: task.assignedTo || 'ceo',
-      task: taskWithDefaults,
+      taskId: task.id,
+      message: `Task created: ${task.title}`,
     })
   },
 
@@ -158,9 +160,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   delegateTask: (fromAgentId, toAgentId, task) => {
     const updatedTask: Task = {
       ...task,
-      status: 'delegated',
+      status: 'in_progress',
       delegatedFrom: fromAgentId,
-      delegatedTo: toAgentId,
       assignedTo: toAgentId,
       updatedAt: new Date(),
     }
@@ -174,12 +175,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     get().highlightConnection(fromAgentId, toAgentId)
 
     get().addEvent({
-      type: 'task_delegated',
+      id: crypto.randomUUID(),
+      type: 'delegation',
       timestamp: new Date(),
       agentId: fromAgentId,
-      task: updatedTask,
-      fromAgent: fromAgentId,
-      toAgent: toAgentId,
+      taskId: task.id,
+      message: `Delegated to ${toAgentId}: ${task.title}`,
+      data: { fromAgent: fromAgentId, toAgent: toAgentId },
     })
 
     setTimeout(() => {
@@ -197,7 +199,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       status: 'completed',
       completedAt: new Date(),
       updatedAt: new Date(),
-      output,
       progress: 100,
     }
 
@@ -214,10 +215,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
 
     get().addEvent({
+      id: crypto.randomUUID(),
       type: 'task_completed',
       timestamp: new Date(),
       agentId: task.assignedTo || 'ceo',
-      task: completedTask,
+      taskId: task.id,
+      message: `Task completed: ${task.title}`,
     })
   },
 
@@ -225,17 +228,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     set(state => ({
       tasks: state.tasks.map(task =>
         task.id === taskId
-          ? { ...task, streamOutput: [...task.streamOutput, entry] }
+          ? { ...task, streamOutput: [...(task.streamOutput || []), entry] }
           : task
       ),
     }))
-
-    get().addEvent({
-      type: 'stream_output',
-      timestamp: new Date(),
-      agentId: entry.agentId,
-      streamEntry: entry,
-    })
   },
 
   updateTaskProgress: (taskId, progress, currentStep) => {
@@ -297,8 +293,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           break
         }
         case 'status': {
-          const statusOrder = { pending: 0, in_progress: 1, delegated: 2, blocked: 3, completed: 4 }
-          comparison = statusOrder[a.status] - statusOrder[b.status]
+          const statusOrder = { pending: 0, in_progress: 1, review: 2, completed: 3 }
+          comparison = (statusOrder[a.status] ?? 0) - (statusOrder[b.status] ?? 0)
           break
         }
       }
@@ -321,7 +317,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   // Event Actions
   addEvent: (event) => {
     set(state => ({
-      eventLog: [event, ...state.eventLog].slice(0, 100),
+      events: [event, ...state.events].slice(0, 100),
     }))
   },
 
@@ -359,10 +355,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       taskFilters: {},
       messages: [],
       isStreaming: false,
-      eventLog: [],
+      events: [],
       selectedAgentId: null,
       selectedTaskId: null,
       showTaskBoard: false,
     })
   },
 }))
+
+// Alias for backward compatibility
+export const useStore = useDashboardStore

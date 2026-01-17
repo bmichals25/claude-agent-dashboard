@@ -3,21 +3,23 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { useDashboardStore } from '@/lib/store'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { generateId } from '@/lib/utils'
-import type { ChatMessage, Task } from '@/lib/types'
+import type { Message, Task } from '@/lib/types'
 
 export function ChatInput() {
   const [value, setValue] = useState('')
   const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { addMessage, addTask, updateAgentStatus, setStreaming } = useDashboardStore()
+  const { saveMessage, saveTask, saveEvent, isConfigured } = useSupabase()
 
   const handleSubmit = useCallback(async () => {
     const trimmed = value.trim()
     if (!trimmed) return
 
     // Add user message
-    const userMessage: ChatMessage = {
+    const userMessage: Message = {
       id: generateId(),
       role: 'user',
       content: trimmed,
@@ -25,6 +27,11 @@ export function ChatInput() {
     }
     addMessage(userMessage)
     setValue('')
+
+    // Persist to Supabase
+    if (isConfigured) {
+      await saveMessage(userMessage)
+    }
 
     // Create a task from the message
     const task: Task = {
@@ -34,33 +41,43 @@ export function ChatInput() {
       status: 'pending',
       priority: 'medium',
       assignedTo: 'ceo',
-      delegatedFrom: null,
-      delegatedTo: null,
+      delegatedFrom: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
-      completedAt: null,
-      subtasks: [],
+      completedAt: undefined,
+      projectId: null,
+      streamOutput: [],
+      progress: 0,
     }
     addTask(task)
+
+    // Persist task to Supabase
+    if (isConfigured) {
+      await saveTask(task)
+    }
 
     // Simulate CEO receiving and processing
     updateAgentStatus('ceo', 'thinking')
     setStreaming(true)
 
     // Simulate streaming response
-    setTimeout(() => {
+    setTimeout(async () => {
       updateAgentStatus('ceo', 'working', task)
 
       // Add assistant acknowledgment
-      const ackMessage: ChatMessage = {
+      const ackMessage: Message = {
         id: generateId(),
         role: 'assistant',
         content: `Received your request. Let me analyze this and delegate to the appropriate team members...`,
         timestamp: new Date(),
         agentId: 'ceo',
-        relatedTaskId: task.id,
       }
       addMessage(ackMessage)
+
+      // Persist acknowledgment to Supabase
+      if (isConfigured) {
+        await saveMessage(ackMessage)
+      }
 
       // Simulate delegation (for demo purposes)
       setTimeout(() => {
@@ -68,7 +85,7 @@ export function ChatInput() {
         updateAgentStatus('ceo', 'idle')
       }, 2000)
     }, 1000)
-  }, [value, addMessage, addTask, updateAgentStatus, setStreaming])
+  }, [value, addMessage, addTask, updateAgentStatus, setStreaming, saveMessage, saveTask, isConfigured])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -102,7 +119,7 @@ export function ChatInput() {
 
       <div className="flex items-center justify-between mt-4">
         <span className="text-xs font-mono text-white/40">
-          {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} + Enter to send
+          {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'} + Enter to send
         </span>
 
         <motion.button

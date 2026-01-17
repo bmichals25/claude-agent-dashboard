@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './client'
-import { useStore } from '../store'
+import { useDashboardStore } from '../store'
 import type { Message, Task, Project, AgentEvent, StreamEntry, AgentId } from '../types'
 
 // Session management
@@ -10,24 +10,22 @@ let currentSessionId: string | null = null
 
 export function useSupabaseSync() {
   const {
-    messages,
-    tasks,
-    projects,
-    events,
     addMessage,
     addTask,
     updateTask,
     addProject,
     addEvent,
     addStreamEntry,
-  } = useStore()
+  } = useDashboardStore()
 
   // Initialize or restore session
   const initSession = useCallback(async () => {
     if (!isSupabaseConfigured()) return null
 
     // Check for existing session in localStorage
-    const storedSessionId = localStorage.getItem('agent_dashboard_session_id')
+    const storedSessionId = typeof window !== 'undefined' 
+      ? localStorage.getItem('agent_dashboard_session_id')
+      : null
     
     if (storedSessionId) {
       // Verify session exists in DB
@@ -56,7 +54,9 @@ export function useSupabaseSync() {
     }
 
     currentSessionId = data.id
-    localStorage.setItem('agent_dashboard_session_id', data.id)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('agent_dashboard_session_id', data.id)
+    }
     return data.id
   }, [])
 
@@ -113,7 +113,7 @@ export function useSupabaseSync() {
       .eq('session_id', sessionId)
 
     if (tasksData) {
-      tasksData.forEach(task => {
+      tasksData.forEach((task: any) => {
         const streamOutput: StreamEntry[] = (task.stream_entries || []).map((entry: any) => ({
           id: entry.id,
           timestamp: new Date(entry.created_at),
@@ -190,7 +190,7 @@ export function useSupabaseSync() {
       priority: task.priority,
       assigned_agent_id: task.assignedTo || null,
       delegated_from: task.delegatedFrom || null,
-      progress: task.progress,
+      progress: task.progress || 0,
       current_step: task.currentStep || null,
     })
   }, [])
