@@ -42,10 +42,30 @@ export interface Agent {
   specialty: string
 }
 
+// Project Types
+export interface Project {
+  id: string
+  name: string
+  description: string
+  status: 'active' | 'paused' | 'completed'
+  createdAt: Date
+  updatedAt: Date
+  color: string
+}
+
 // Task Types
 export type TaskStatus = 'pending' | 'in_progress' | 'delegated' | 'completed' | 'blocked'
 
 export type TaskPriority = 'critical' | 'high' | 'medium' | 'low'
+
+// Stream output entry - represents agent's stream of consciousness
+export interface StreamEntry {
+  id: string
+  timestamp: Date
+  agentId: AgentId
+  type: 'thought' | 'action' | 'result' | 'error'
+  content: string
+}
 
 export interface Task {
   id: string
@@ -56,11 +76,17 @@ export interface Task {
   assignedTo: AgentId | null
   delegatedFrom: AgentId | null
   delegatedTo: AgentId | null
+  projectId: string | null
   createdAt: Date
   updatedAt: Date
   completedAt: Date | null
   subtasks: Task[]
   output?: string
+  // Stream of consciousness - live agent thoughts/actions
+  streamOutput: StreamEntry[]
+  // Progress tracking
+  progress: number // 0-100
+  currentStep?: string
 }
 
 // Event Types for Real-time Updates
@@ -75,6 +101,7 @@ export type AgentEventType =
   | 'agent_idle'
   | 'message_received'
   | 'message_sent'
+  | 'stream_output' // New: for live stream updates
 
 export interface AgentEvent {
   type: AgentEventType
@@ -85,6 +112,7 @@ export interface AgentEvent {
   fromAgent?: AgentId
   toAgent?: AgentId
   thought?: string
+  streamEntry?: StreamEntry
 }
 
 // Chat Types
@@ -101,4 +129,15 @@ export interface ChatMessage {
 export interface SSEEvent {
   event: string | null
   data: string
+}
+
+// Sort/Filter options for Task Board
+export type TaskSortBy = 'created' | 'updated' | 'priority' | 'agent' | 'project' | 'status'
+export type TaskSortOrder = 'asc' | 'desc'
+
+export interface TaskFilters {
+  agentId?: AgentId | null
+  projectId?: string | null
+  status?: TaskStatus | null
+  priority?: TaskPriority | null
 }
