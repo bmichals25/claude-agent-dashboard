@@ -1,0 +1,167 @@
+@import 'tailwindcss';
+
+:root {
+  --bg: #030708;
+  --glass: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --prism: linear-gradient(135deg, #ff00c1, #00fff0, #7000ff);
+  --accent: #00fff0;
+  --accent-pink: #ff00c1;
+  --accent-purple: #7000ff;
+  --text-main: #f0f0f0;
+  --text-dim: #888;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: crosshair;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Gelatinous Background Refraction */
+.glass-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(112, 0, 255, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(0, 255, 240, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(255, 0, 193, 0.05) 0%, transparent 60%);
+}
+
+/* Glass Card Effect */
+.liquid-card {
+  background: var(--glass);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 32px;
+  padding: 32px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+/* Chat Input */
+.chat-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  color: white;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  resize: none;
+}
+
+.chat-input:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 20px rgba(0, 255, 240, 0.1);
+}
+
+.chat-input::placeholder {
+  color: var(--text-dim);
+}
+
+/* Agent Status Indicators */
+.status-idle {
+  box-shadow: 0 0 10px rgba(136, 136, 136, 0.3);
+}
+
+.status-working {
+  box-shadow: 0 0 20px rgba(0, 255, 240, 0.6);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.status-delegating {
+  box-shadow: 0 0 25px rgba(255, 0, 193, 0.6);
+}
+
+/* Connection Lines */
+.tether-line {
+  stroke: rgba(0, 255, 240, 0.2);
+  stroke-width: 2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(0, 255, 240, 0.3));
+}
+
+.tether-line.active {
+  stroke: rgba(0, 255, 240, 0.6);
+  stroke-width: 3;
+  animation: pulse-line 1s ease-in-out infinite;
+}
+
+@keyframes pulse-line {
+  0%, 100% { stroke-opacity: 0.6; }
+  50% { stroke-opacity: 1; }
+}
+
+/* Task Flow Animation */
+.task-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent);
+  animation: flow-along-path 2s ease-in-out;
+}
+
+@keyframes flow-along-path {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  10% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  90% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
