@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
 
 export const metadata: Metadata = {
   title: 'Claude Agent Dashboard',
@@ -23,7 +24,9 @@ export default function RootLayout({
       </head>
       <body className="bg-bg text-white font-sans overflow-hidden">
         <div className="glass-background" />
-        {children}
+        <SupabaseProvider>
+          {children}
+        </SupabaseProvider>
       </body>
     </html>
   )
