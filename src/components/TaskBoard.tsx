@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useDashboardStore } from '@/lib/store'
+import { ProjectManager } from '@/components/ProjectManager'
 import type { Task, TaskStatus, TaskSortBy, StreamEntry } from '@/lib/types'
 import { formatTimestamp, truncate } from '@/lib/utils'
 
 const statusColumns: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'pending', label: 'Pending', color: '#888' },
   { status: 'in_progress', label: 'In Progress', color: '#00fff0' },
-  { status: 'delegated', label: 'Delegated', color: '#ff00c1' },
+  { status: 'review', label: 'Review', color: '#ff00c1' },
   { status: 'completed', label: 'Completed', color: '#00ff66' },
 ]
 
@@ -23,7 +24,7 @@ const sortOptions: { value: TaskSortBy; label: string }[] = [
 ]
 
 function StreamOutput({ entries }: { entries: StreamEntry[] }) {
-  if (entries.length === 0) return null
+  if (!entries || entries.length === 0) return null
 
   const typeStyles = {
     thought: 'text-yellow-400',
@@ -153,7 +154,7 @@ function TaskCard({ task, expanded, onToggle }: {
       </div>
 
       {/* Progress Bar (for active tasks) */}
-      {(task.status === 'in_progress' || task.status === 'delegated') && (
+      {(task.status === 'in_progress' || task.status === 'review') && task.progress > 0 && (
         <ProgressBar progress={task.progress} currentStep={task.currentStep} />
       )}
 
@@ -174,18 +175,10 @@ function TaskCard({ task, expanded, onToggle }: {
             )}
 
             {/* Stream of Consciousness */}
-            {task.streamOutput.length > 0 && (
+            {task.streamOutput && task.streamOutput.length > 0 && (
               <div className="border-t border-white/10 pt-3 mt-3">
                 <h5 className="text-xs text-white/40 uppercase mb-2">Live Output</h5>
                 <StreamOutput entries={task.streamOutput} />
-              </div>
-            )}
-
-            {/* Output (if completed) */}
-            {task.output && (
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <h5 className="text-xs text-white/40 uppercase mb-2">Result</h5>
-                <p className="text-xs text-green-400">{task.output}</p>
               </div>
             )}
           </motion.div>
@@ -215,6 +208,7 @@ export function TaskBoard() {
 
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
+  const [showProjectManager, setShowProjectManager] = useState(false)
 
   const sortedTasks = getSortedFilteredTasks()
 
@@ -259,6 +253,14 @@ export function TaskBoard() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white">Agent Task Board</h2>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowProjectManager(!showProjectManager)}
+                    className={`px-3 py-1 rounded text-xs font-mono ${
+                      showProjectManager ? 'bg-accent/20 text-accent' : 'text-white/40 hover:text-white/60'
+                    }`}
+                  >
+                    Projects
+                  </button>
                   <button
                     onClick={() => setViewMode('kanban')}
                     className={`px-3 py-1 rounded text-xs font-mono ${
@@ -305,7 +307,7 @@ export function TaskBoard() {
                   <span className="text-xs text-white/40">Agent:</span>
                   <select
                     value={taskFilters.agentId || ''}
-                    onChange={(e) => setTaskFilters({ agentId: e.target.value || null })}
+                    onChange={(e) => setTaskFilters({ agentId: (e.target.value || null) as any })}
                     className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white"
                   >
                     <option value="">All</option>
@@ -341,6 +343,26 @@ export function TaskBoard() {
                 )}
               </div>
             </div>
+
+            {/* Project Manager Sidebar */}
+            <AnimatePresence>
+              {showProjectManager && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="border-b border-white/10 overflow-hidden"
+                >
+                  <div className="p-4">
+                    <h3 className="text-sm font-mono text-white/60 mb-3">Manage Projects</h3>
+                    <ProjectManager
+                      selectedProjectId={taskFilters.projectId || null}
+                      onSelectProject={(id) => setTaskFilters({ projectId: id })}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Task Content */}
             <div className="flex-1 overflow-hidden p-6">
