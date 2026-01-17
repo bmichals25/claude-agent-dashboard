@@ -7,40 +7,17 @@ import type { AgentEvent } from '@/lib/types'
 
 const eventIcons: Record<string, string> = {
   task_created: '📝',
-  task_delegated: '🔄',
-  task_started: '▶️',
+  task_assigned: '👤',
   task_completed: '✅',
-  task_blocked: '🚫',
   agent_thinking: '🤔',
-  agent_working: '⚡',
-  agent_idle: '💤',
-  message_received: '📨',
-  message_sent: '📤',
+  agent_action: '⚡',
+  error: '🚨',
+  delegation: '🔄',
 }
 
 function EventItem({ event }: { event: AgentEvent }) {
   const { agents } = useDashboardStore()
-  const agent = agents.find(a => a.id === event.agentId)
-
-  const getMessage = () => {
-    switch (event.type) {
-      case 'task_created':
-        return `Created task: ${event.task?.title}`
-      case 'task_delegated':
-        const toAgent = agents.find(a => a.id === event.toAgent)
-        return `Delegated to ${toAgent?.displayName}`
-      case 'task_started':
-        return `Started: ${event.task?.title}`
-      case 'task_completed':
-        return `Completed: ${event.task?.title}`
-      case 'agent_thinking':
-        return event.thought || 'Processing...'
-      case 'agent_working':
-        return 'Working on task...'
-      default:
-        return event.type
-    }
-  }
+  const agent = event.agentId ? agents.find(a => a.id === event.agentId) : null
 
   return (
     <motion.div
@@ -66,7 +43,7 @@ function EventItem({ event }: { event: AgentEvent }) {
           </span>
         </div>
         <p className="text-sm text-white/70 truncate">
-          {getMessage()}
+          {event.message}
         </p>
       </div>
     </motion.div>
@@ -74,7 +51,7 @@ function EventItem({ event }: { event: AgentEvent }) {
 }
 
 export function EventLog() {
-  const { eventLog } = useDashboardStore()
+  const { events } = useDashboardStore()
 
   return (
     <div className="liquid-card">
@@ -84,7 +61,7 @@ export function EventLog() {
 
       <div className="max-h-60 overflow-y-auto">
         <AnimatePresence mode="popLayout">
-          {eventLog.length === 0 ? (
+          {events.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -93,8 +70,8 @@ export function EventLog() {
               Waiting for events...
             </motion.div>
           ) : (
-            eventLog.slice(0, 20).map((event, i) => (
-              <EventItem key={`${event.timestamp.getTime()}-${i}`} event={event} />
+            events.slice(0, 20).map((event) => (
+              <EventItem key={event.id} event={event} />
             ))
           )}
         </AnimatePresence>

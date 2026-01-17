@@ -1,7 +1,5 @@
 // Agent Types
-export type AgentId = string
-
-export type AgentRole = 
+export type AgentId = 
   | 'ceo'
   | 'chief_of_staff'
   | 'pipeline_manager'
@@ -22,6 +20,8 @@ export type AgentRole =
   | 'frontend_designer'
   | 'user_testing'
   | 'technical_writer'
+
+export type AgentRole = AgentId
 
 export type AgentStatus = 'idle' | 'thinking' | 'working' | 'delegating' | 'completed'
 
@@ -46,15 +46,15 @@ export interface Agent {
 export interface Project {
   id: string
   name: string
-  description: string
-  status: 'active' | 'paused' | 'completed'
+  description?: string
+  status: 'active' | 'paused' | 'completed' | 'archived'
   createdAt: Date
   updatedAt: Date
   color: string
 }
 
 // Task Types
-export type TaskStatus = 'pending' | 'in_progress' | 'delegated' | 'completed' | 'blocked'
+export type TaskStatus = 'pending' | 'in_progress' | 'review' | 'completed'
 
 export type TaskPriority = 'critical' | 'high' | 'medium' | 'low'
 
@@ -70,18 +70,15 @@ export interface StreamEntry {
 export interface Task {
   id: string
   title: string
-  description: string
+  description?: string
   status: TaskStatus
   priority: TaskPriority
-  assignedTo: AgentId | null
-  delegatedFrom: AgentId | null
-  delegatedTo: AgentId | null
+  assignedTo?: AgentId
+  delegatedFrom?: AgentId
   projectId: string | null
   createdAt: Date
   updatedAt: Date
-  completedAt: Date | null
-  subtasks: Task[]
-  output?: string
+  completedAt?: Date
   // Stream of consciousness - live agent thoughts/actions
   streamOutput: StreamEntry[]
   // Progress tracking
@@ -92,38 +89,34 @@ export interface Task {
 // Event Types for Real-time Updates
 export type AgentEventType =
   | 'task_created'
-  | 'task_delegated'
-  | 'task_started'
+  | 'task_assigned'
   | 'task_completed'
-  | 'task_blocked'
   | 'agent_thinking'
-  | 'agent_working'
-  | 'agent_idle'
-  | 'message_received'
-  | 'message_sent'
-  | 'stream_output' // New: for live stream updates
+  | 'agent_action'
+  | 'error'
+  | 'delegation'
 
 export interface AgentEvent {
+  id: string
   type: AgentEventType
   timestamp: Date
-  agentId: AgentId
-  task?: Task
-  message?: string
-  fromAgent?: AgentId
-  toAgent?: AgentId
-  thought?: string
-  streamEntry?: StreamEntry
+  agentId?: AgentId
+  taskId?: string
+  message: string
+  data?: Record<string, unknown>
 }
 
-// Chat Types
-export interface ChatMessage {
+// Message Types (for chat)
+export interface Message {
   id: string
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: Date
   agentId?: AgentId
-  relatedTaskId?: string
 }
+
+// Alias for backward compatibility
+export type ChatMessage = Message
 
 // SSE Event Structure
 export interface SSEEvent {
