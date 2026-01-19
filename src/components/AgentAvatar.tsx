@@ -23,6 +23,7 @@ interface AgentAvatarProps {
   showLabel?: boolean
   onClick?: () => void
   trackCursor?: boolean // Enable cursor tracking for this specific agent
+  isSelected?: boolean // Show selection highlight around the avatar
 }
 
 const sizeClasses = {
@@ -52,7 +53,8 @@ export const AgentAvatar = memo(function AgentAvatar({
   size = 'md',
   showLabel = true,
   onClick,
-  trackCursor = false
+  trackCursor = false,
+  isSelected = false
 }: AgentAvatarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 })
@@ -236,12 +238,9 @@ export const AgentAvatar = memo(function AgentAvatar({
 
   // Static avatar for grid display (optimized, no tracking)
   return (
-    <motion.div
+    <div
       className="flex flex-col items-center cursor-pointer group relative"
       onClick={onClick}
-      whileHover={{ scale: 1.08 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
     >
       {/* Background mask to hide connection lines */}
       <div
@@ -253,19 +252,30 @@ export const AgentAvatar = memo(function AgentAvatar({
         }}
       />
       {/* Agent Blob - using CSS animation for morph, minimal JS animation */}
-      <div
-        className={cn(
-          'relative flex items-center justify-center animate-morph transition-shadow duration-300',
-          sizeClass,
-          statusStyles[agent.status],
-          isActive && 'animate-pulse-glow'
+      <div className="relative">
+        {/* Selection highlight - just around the blob */}
+        {isSelected && (
+          <div
+            className={cn('absolute inset-0 -m-2 animate-morph pointer-events-none', sizeClass)}
+            style={{
+              border: `2px solid ${agent.color}`,
+              boxShadow: `0 0 20px ${agent.color}80, 0 0 40px ${agent.color}40`,
+            }}
+          />
         )}
-        style={{
-          backgroundColor: agent.color,
-          boxShadow: `0 0 ${isActive ? 25 : 12}px ${agent.color}50, inset 0 4px 15px rgba(255,255,255,0.3), inset 0 -4px 15px rgba(0,0,0,0.3)`,
-          willChange: 'transform',
-        }}
-      >
+        <div
+          className={cn(
+            'relative flex items-center justify-center animate-morph transition-shadow duration-300',
+            sizeClass,
+            statusStyles[agent.status],
+            isActive && 'animate-pulse-glow'
+          )}
+          style={{
+            backgroundColor: agent.color,
+            boxShadow: `0 0 ${isActive ? 25 : 12}px ${agent.color}50, inset 0 4px 15px rgba(255,255,255,0.3), inset 0 -4px 15px rgba(0,0,0,0.3)`,
+            willChange: 'transform',
+          }}
+        >
         {/* Face - static positioning, CSS blink animation */}
         <div
           className="absolute flex flex-col items-center"
@@ -335,6 +345,6 @@ export const AgentAvatar = memo(function AgentAvatar({
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   )
 })
