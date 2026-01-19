@@ -1,8 +1,9 @@
 // Agent Types
-export type AgentId = 
+export type AgentId =
   | 'ceo'
   | 'chief_of_staff'
   | 'pipeline_manager'
+  | 'agent_operations'
   | 'vp_engineering'
   | 'vp_product'
   | 'vp_design_qa'
@@ -20,6 +21,37 @@ export type AgentId =
   | 'frontend_designer'
   | 'user_testing'
   | 'technical_writer'
+
+// Navigation Types
+export type NavigationPage = 'dashboard' | 'agent-health' | 'analytics' | 'settings'
+
+// Agent Health Types
+export type HealthStatus = 'excellent' | 'good' | 'needs_attention' | 'critical'
+
+export interface AgentHealthMetrics {
+  agentId: AgentId
+  healthScore: number // 0-100
+  status: HealthStatus
+  taskSuccessRate: number // percentage
+  qualityScore: number // 0-100
+  efficiency: number // percentage relative to baseline
+  errorRate: number // percentage
+  autonomyLevel: number // percentage
+  tasksCompleted: number
+  tasksAssigned: number
+  avgCompletionTime: number // in minutes
+  lastActive: Date
+  trend: 'up' | 'down' | 'stable'
+  issues: AgentIssue[]
+}
+
+export interface AgentIssue {
+  id: string
+  severity: 'critical' | 'high' | 'medium' | 'low'
+  description: string
+  recommendation: string
+  detectedAt: Date
+}
 
 export type AgentRole = AgentId
 

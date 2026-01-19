@@ -144,28 +144,30 @@ export function ProjectManager({ onSelectProject, selectedProjectId }: {
               value={newName}
               onChange={e => setNewName(e.target.value)}
               placeholder="Project name"
-              className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white placeholder:text-white/30"
+              className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               autoFocus
             />
-            
+
             <input
               type="text"
               value={newDescription}
               onChange={e => setNewDescription(e.target.value)}
               placeholder="Description (optional)"
-              className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white placeholder:text-white/30"
+              className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
             />
 
             {/* Color Picker */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap" role="radiogroup" aria-label="Project color">
               {PROJECT_COLORS.map(color => (
                 <button
                   key={color}
                   onClick={() => setNewColor(color)}
-                  className={`w-6 h-6 rounded-full border-2 transition-all ${
+                  className={`w-6 h-6 rounded-full border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:ring-accent ${
                     newColor === color ? 'border-white scale-110' : 'border-transparent'
                   }`}
                   style={{ backgroundColor: color }}
+                  aria-label={`Select ${color} color`}
+                  aria-pressed={newColor === color}
                 />
               ))}
             </div>
@@ -174,13 +176,13 @@ export function ProjectManager({ onSelectProject, selectedProjectId }: {
               <button
                 onClick={handleCreate}
                 disabled={!newName.trim()}
-                className="flex-1 px-3 py-1.5 bg-accent/20 text-accent text-xs rounded hover:bg-accent/30 disabled:opacity-30"
+                className="flex-1 px-3 py-1.5 bg-accent/20 text-accent text-xs rounded hover:bg-accent/30 disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 Create
               </button>
               <button
                 onClick={() => setIsCreating(false)}
-                className="px-3 py-1.5 text-white/60 text-xs rounded hover:bg-white/5"
+                className="px-3 py-1.5 text-white/60 text-xs rounded hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 Cancel
               </button>
@@ -193,7 +195,7 @@ export function ProjectManager({ onSelectProject, selectedProjectId }: {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsCreating(true)}
-            className="w-full px-3 py-2 border border-dashed border-white/20 rounded-lg text-xs text-white/40 hover:text-white/60 hover:border-white/30 transition-colors"
+            className="w-full px-3 py-2 border border-dashed border-white/20 rounded-lg text-xs text-white/40 hover:text-white/60 hover:border-white/30 transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
           >
             + New Project
           </motion.button>
@@ -219,7 +221,9 @@ export function ProjectPicker({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        className="flex items-center gap-2 px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
       >
         {selectedProject ? (
           <>

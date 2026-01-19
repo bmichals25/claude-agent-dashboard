@@ -8,10 +8,10 @@ import type { Task, TaskStatus, TaskSortBy, StreamEntry } from '@/lib/types'
 import { formatTimestamp, truncate } from '@/lib/utils'
 
 const statusColumns: { status: TaskStatus; label: string; color: string }[] = [
-  { status: 'pending', label: 'Pending', color: '#888' },
-  { status: 'in_progress', label: 'In Progress', color: '#00fff0' },
-  { status: 'review', label: 'Review', color: '#ff00c1' },
-  { status: 'completed', label: 'Completed', color: '#00ff66' },
+  { status: 'pending', label: 'Pending', color: '#6b5f52' },
+  { status: 'in_progress', label: 'In Progress', color: '#ff6b35' },
+  { status: 'review', label: 'Review', color: '#f7c59f' },
+  { status: 'completed', label: 'Completed', color: '#2ec4b6' },
 ]
 
 const sortOptions: { value: TaskSortBy; label: string }[] = [
@@ -27,17 +27,17 @@ function StreamOutput({ entries }: { entries: StreamEntry[] }) {
   if (!entries || entries.length === 0) return null
 
   const typeStyles = {
-    thought: 'text-yellow-400',
+    thought: 'text-[var(--accent-secondary)]',
     action: 'text-accent',
-    result: 'text-green-400',
-    error: 'text-red-400',
+    result: 'text-[var(--accent-tertiary)]',
+    error: 'text-[var(--error)]',
   }
 
   const typeIcons = {
-    thought: '🤔',
+    thought: '○',
     action: '⚡',
-    result: '✅',
-    error: '❌',
+    result: '✓',
+    error: '✕',
   }
 
   return (
@@ -60,23 +60,23 @@ function StreamOutput({ entries }: { entries: StreamEntry[] }) {
 function ProgressBar({ progress, currentStep }: { progress: number; currentStep?: string }) {
   return (
     <div className="mt-2">
-      <div className="flex justify-between text-xs text-white/40 mb-1">
+      <div className="flex justify-between text-xs text-[var(--text-dim)] mb-1">
         <span>{currentStep || 'Processing...'}</span>
-        <span>{progress}%</span>
+        <span className="font-mono">{progress}%</span>
       </div>
-      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-[var(--glass-border)] rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-accent"
+          className="h-full bg-accent rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         />
       </div>
     </div>
   )
 }
 
-function TaskCard({ task, expanded, onToggle }: { 
+function TaskCard({ task, expanded, onToggle }: {
   task: Task
   expanded: boolean
   onToggle: () => void
@@ -85,46 +85,54 @@ function TaskCard({ task, expanded, onToggle }: {
   const assignedAgent = agents.find(a => a.id === task.assignedTo)
   const project = projects.find(p => p.id === task.projectId)
 
+  const priorityColors: Record<string, string> = {
+    critical: 'var(--error)',
+    high: '#ff8c42',
+    medium: 'var(--warning)',
+    low: 'var(--text-dim)',
+  }
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="bg-white/5 border border-white/10 rounded-xl p-3 mb-2 cursor-pointer hover:bg-white/8 transition-colors"
+      className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-xl p-3 mb-2 cursor-pointer hover:border-[var(--glass-border-hover)] transition-all duration-200 border-l-4"
+      style={{ borderLeftColor: priorityColors[task.priority] || 'var(--text-dim)' }}
       onClick={onToggle}
     >
       {/* Header */}
       <div className="flex items-start justify-between">
-        <h4 className="text-sm text-white font-medium flex-1">
+        <h4 className="text-sm text-[var(--text-main)] font-medium flex-1" title={task.title}>
           {truncate(task.title, 40)}
         </h4>
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
-          className="text-white/40 text-xs ml-2"
+          className="text-[var(--text-dim)] text-xs ml-2"
         >
           ▼
         </motion.span>
       </div>
-      
+
       {/* Agent & Project Tags */}
       <div className="flex items-center gap-2 mt-2 flex-wrap">
         {assignedAgent && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <div
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: assignedAgent.color }}
             />
-            <span className="text-xs text-white/60 font-mono">
+            <span className="text-xs text-[var(--text-secondary)] font-mono">
               {assignedAgent.displayName}
             </span>
           </div>
         )}
         {project && (
-          <span 
+          <span
             className="text-xs px-2 py-0.5 rounded-full font-mono"
-            style={{ 
-              backgroundColor: `${project.color}20`,
+            style={{
+              backgroundColor: `${project.color}15`,
               color: project.color,
             }}
           >
@@ -136,19 +144,19 @@ function TaskCard({ task, expanded, onToggle }: {
       {/* Priority & Time */}
       <div className="flex items-center justify-between mt-2">
         <span
-          className={`text-xs px-2 py-0.5 rounded-full ${
+          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
             task.priority === 'critical'
-              ? 'bg-red-500/20 text-red-400'
+              ? 'bg-[var(--error)]/15 text-[var(--error)]'
               : task.priority === 'high'
-              ? 'bg-orange-500/20 text-orange-400'
+              ? 'bg-orange-500/15 text-orange-400'
               : task.priority === 'medium'
-              ? 'bg-yellow-500/20 text-yellow-400'
-              : 'bg-gray-500/20 text-gray-400'
+              ? 'bg-[var(--warning)]/15 text-[var(--warning)]'
+              : 'bg-[var(--text-dim)]/15 text-[var(--text-dim)]'
           }`}
         >
           {task.priority}
         </span>
-        <span className="text-xs text-white/40 font-mono">
+        <span className="text-xs text-[var(--text-dim)] font-mono">
           {formatTimestamp(task.createdAt)}
         </span>
       </div>
@@ -169,15 +177,15 @@ function TaskCard({ task, expanded, onToggle }: {
           >
             {/* Description */}
             {task.description && (
-              <p className="text-xs text-white/60 mt-3 border-t border-white/10 pt-3">
+              <p className="text-xs text-[var(--text-secondary)] mt-3 border-t border-[var(--glass-border)] pt-3 leading-relaxed">
                 {task.description}
               </p>
             )}
 
             {/* Stream of Consciousness */}
             {task.streamOutput && task.streamOutput.length > 0 && (
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <h5 className="text-xs text-white/40 uppercase mb-2">Live Output</h5>
+              <div className="border-t border-[var(--glass-border)] pt-3 mt-3">
+                <h5 className="text-xs text-[var(--text-dim)] font-mono mb-2">Live Output</h5>
                 <StreamOutput entries={task.streamOutput} />
               </div>
             )}
@@ -223,20 +231,28 @@ export function TaskBoard() {
 
   return (
     <>
-      {/* Toggle Button */}
-      <motion.button
-        onClick={toggleTaskBoard}
-        className="fixed top-6 right-6 z-50 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-sm font-mono"
-        whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {showTaskBoard ? '← Hide Tasks' : 'Tasks →'}
-        {tasks.length > 0 && (
-          <span className="ml-2 px-2 py-0.5 bg-accent/20 text-accent rounded-full text-xs">
-            {tasks.length}
-          </span>
+      {/* Toggle Button - hidden when panel is open to avoid z-index conflict */}
+      <AnimatePresence>
+        {!showTaskBoard && (
+          <motion.button
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            onClick={toggleTaskBoard}
+            className="fixed top-6 right-6 z-40 px-4 py-2 rounded-xl bg-[var(--bg-elevated)]/80 backdrop-blur-xl border border-[var(--glass-border)] text-[var(--text-secondary)] text-sm font-mono hover:border-[var(--glass-border-hover)] hover:text-[var(--text-main)] transition-all duration-200"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            aria-label="Show task board"
+          >
+            Tasks →
+            {tasks.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-accent/15 text-accent rounded-full text-xs font-medium">
+                {tasks.length}
+              </span>
+            )}
+          </motion.button>
         )}
-      </motion.button>
+      </AnimatePresence>
 
       {/* Task Board Panel */}
       <AnimatePresence>
@@ -246,36 +262,46 @@ export function TaskBoard() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 w-[700px] h-full bg-bg/95 backdrop-blur-xl border-l border-white/10 z-40 overflow-hidden flex flex-col"
+            className="fixed top-0 right-0 w-full max-w-[700px] h-full bg-[var(--bg)]/98 backdrop-blur-xl border-l border-[var(--glass-border)] z-50 overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="p-6 border-b border-white/10">
+            <div className="p-6 border-b border-[var(--glass-border)]">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white">Agent Task Board</h2>
-                <div className="flex gap-2">
+                <h2 className="text-xl font-bold text-[var(--text-main)]">Agent Task Board</h2>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowProjectManager(!showProjectManager)}
-                    className={`px-3 py-1 rounded text-xs font-mono ${
-                      showProjectManager ? 'bg-accent/20 text-accent' : 'text-white/40 hover:text-white/60'
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent ${
+                      showProjectManager ? 'bg-accent/15 text-accent' : 'text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[var(--glass)]'
                     }`}
                   >
                     Projects
                   </button>
                   <button
                     onClick={() => setViewMode('kanban')}
-                    className={`px-3 py-1 rounded text-xs font-mono ${
-                      viewMode === 'kanban' ? 'bg-accent/20 text-accent' : 'text-white/40'
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent ${
+                      viewMode === 'kanban' ? 'bg-accent/15 text-accent' : 'text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[var(--glass)]'
                     }`}
                   >
                     Kanban
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`px-3 py-1 rounded text-xs font-mono ${
-                      viewMode === 'list' ? 'bg-accent/20 text-accent' : 'text-white/40'
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent ${
+                      viewMode === 'list' ? 'bg-accent/15 text-accent' : 'text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[var(--glass)]'
                     }`}
                   >
                     List
+                  </button>
+                  {/* Close button */}
+                  <button
+                    onClick={toggleTaskBoard}
+                    className="p-2 rounded-lg hover:bg-[var(--glass)] transition-all duration-200 text-[var(--text-dim)] hover:text-[var(--text-main)] ml-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    aria-label="Close task board"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -284,11 +310,12 @@ export function TaskBoard() {
               <div className="flex gap-4 flex-wrap">
                 {/* Sort By */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-white/40">Sort:</span>
+                  <label htmlFor="sort-select" className="text-xs text-[var(--text-dim)]">Sort:</label>
                   <select
+                    id="sort-select"
                     value={taskSortBy}
                     onChange={(e) => setTaskSortBy(e.target.value as TaskSortBy)}
-                    className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                    className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-main)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent hover:border-[var(--glass-border-hover)] transition-colors [&>option]:bg-[var(--bg)] [&>option]:text-[var(--text-main)]"
                   >
                     {sortOptions.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -296,7 +323,8 @@ export function TaskBoard() {
                   </select>
                   <button
                     onClick={() => setTaskSortOrder(taskSortOrder === 'asc' ? 'desc' : 'asc')}
-                    className="text-xs text-white/60 hover:text-white"
+                    className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] px-2 py-1 rounded-lg hover:bg-[var(--glass)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
+                    aria-label={taskSortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
                   >
                     {taskSortOrder === 'asc' ? '↑' : '↓'}
                   </button>
@@ -304,11 +332,12 @@ export function TaskBoard() {
 
                 {/* Filter by Agent */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-white/40">Agent:</span>
+                  <label htmlFor="agent-filter" className="text-xs text-[var(--text-dim)]">Agent:</label>
                   <select
+                    id="agent-filter"
                     value={taskFilters.agentId || ''}
                     onChange={(e) => setTaskFilters({ agentId: (e.target.value || null) as any })}
-                    className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                    className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-main)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent hover:border-[var(--glass-border-hover)] transition-colors [&>option]:bg-[var(--bg)] [&>option]:text-[var(--text-main)]"
                   >
                     <option value="">All</option>
                     {agents.map(agent => (
@@ -319,11 +348,12 @@ export function TaskBoard() {
 
                 {/* Filter by Project */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-white/40">Project:</span>
+                  <label htmlFor="project-filter" className="text-xs text-[var(--text-dim)]">Project:</label>
                   <select
+                    id="project-filter"
                     value={taskFilters.projectId || ''}
                     onChange={(e) => setTaskFilters({ projectId: e.target.value || null })}
-                    className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                    className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-main)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent hover:border-[var(--glass-border-hover)] transition-colors [&>option]:bg-[var(--bg)] [&>option]:text-[var(--text-main)]"
                   >
                     <option value="">All</option>
                     {projects.map(project => (
@@ -336,7 +366,7 @@ export function TaskBoard() {
                 {hasActiveFilters && (
                   <button
                     onClick={clearTaskFilters}
-                    className="text-xs text-accent hover:underline"
+                    className="text-xs text-accent hover:text-accent/80 focus:outline-none focus:ring-2 focus:ring-accent rounded px-2 py-1 transition-colors"
                   >
                     Clear filters
                   </button>
@@ -351,10 +381,10 @@ export function TaskBoard() {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="border-b border-white/10 overflow-hidden"
+                  className="border-b border-[var(--glass-border)] overflow-hidden"
                 >
                   <div className="p-4">
-                    <h3 className="text-sm font-mono text-white/60 mb-3">Manage Projects</h3>
+                    <h3 className="text-sm font-mono text-[var(--text-secondary)] mb-3">Manage Projects</h3>
                     <ProjectManager
                       selectedProjectId={taskFilters.projectId || null}
                       onSelectProject={(id) => setTaskFilters({ projectId: id })}
@@ -375,10 +405,10 @@ export function TaskBoard() {
                           className="w-2 h-2 rounded-full"
                           style={{ backgroundColor: color }}
                         />
-                        <h3 className="text-xs font-mono uppercase text-white/60">
+                        <h3 className="text-xs font-mono text-[var(--text-secondary)]">
                           {label}
                         </h3>
-                        <span className="text-xs text-white/40">
+                        <span className="text-xs text-[var(--text-dim)] font-mono">
                           ({getTasksForStatus(status).length})
                         </span>
                       </div>
@@ -386,8 +416,8 @@ export function TaskBoard() {
                       <div className="flex-1 overflow-y-auto pr-1">
                         <AnimatePresence mode="popLayout">
                           {getTasksForStatus(status).map(task => (
-                            <TaskCard 
-                              key={task.id} 
+                            <TaskCard
+                              key={task.id}
                               task={task}
                               expanded={expandedTaskId === task.id}
                               onToggle={() => setExpandedTaskId(
@@ -398,7 +428,7 @@ export function TaskBoard() {
                         </AnimatePresence>
 
                         {getTasksForStatus(status).length === 0 && (
-                          <div className="text-xs text-white/30 text-center py-4">
+                          <div className="text-xs text-[var(--text-dim)] text-center py-6 font-mono">
                             No tasks
                           </div>
                         )}
@@ -422,7 +452,7 @@ export function TaskBoard() {
                   </AnimatePresence>
                   
                   {sortedTasks.length === 0 && (
-                    <div className="text-sm text-white/40 text-center py-8">
+                    <div className="text-sm text-[var(--text-dim)] text-center py-12 font-mono">
                       No tasks match your filters
                     </div>
                   )}

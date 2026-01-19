@@ -6,13 +6,13 @@ import { formatTimestamp } from '@/lib/utils'
 import type { AgentEvent } from '@/lib/types'
 
 const eventIcons: Record<string, string> = {
-  task_created: '📝',
-  task_assigned: '👤',
-  task_completed: '✅',
-  agent_thinking: '🤔',
+  task_created: '◈',
+  task_assigned: '◉',
+  task_completed: '✓',
+  agent_thinking: '○',
   agent_action: '⚡',
-  error: '🚨',
-  delegation: '🔄',
+  error: '✕',
+  delegation: '↻',
 }
 
 function EventItem({ event }: { event: AgentEvent }) {
@@ -24,25 +24,25 @@ function EventItem({ event }: { event: AgentEvent }) {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      className="flex items-start gap-3 py-2 border-b border-white/5 last:border-0"
+      className="flex items-start gap-3 py-2.5 border-b border-[var(--glass-border)] last:border-0"
     >
-      <span className="text-sm">{eventIcons[event.type] || '📌'}</span>
-      
+      <span className="text-sm text-[var(--text-dim)]">{eventIcons[event.type] || '•'}</span>
+
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           {agent && (
             <span
-              className="text-xs font-mono uppercase"
+              className="text-xs font-mono font-medium"
               style={{ color: agent.color }}
             >
               {agent.displayName}
             </span>
           )}
-          <span className="text-xs text-white/40 font-mono">
+          <span className="text-xs text-[var(--text-dim)] font-mono">
             {formatTimestamp(event.timestamp)}
           </span>
         </div>
-        <p className="text-sm text-white/70 truncate">
+        <p className="text-sm text-[var(--text-secondary)] truncate" title={event.message}>
           {event.message}
         </p>
       </div>
@@ -55,7 +55,7 @@ export function EventLog() {
 
   return (
     <div className="liquid-card">
-      <h3 className="text-sm uppercase tracking-widest text-accent font-bold mb-4">
+      <h3 className="text-base font-semibold text-accent mb-4">
         Event Stream
       </h3>
 
@@ -65,7 +65,7 @@ export function EventLog() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-sm text-white/40 text-center py-4"
+              className="text-sm text-[var(--text-dim)] text-center py-6 font-mono"
             >
               Waiting for events...
             </motion.div>

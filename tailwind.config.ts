@@ -9,15 +9,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        'bg': '#030708',
-        'glass': 'rgba(255, 255, 255, 0.03)',
-        'accent': '#00fff0',
-        'accent-pink': '#ff00c1',
-        'accent-purple': '#7000ff',
+        'bg': '#0a0806',
+        'bg-elevated': '#12100d',
+        'glass': 'rgba(255, 235, 220, 0.03)',
+        'glass-border': 'rgba(255, 200, 150, 0.08)',
+        'accent': '#ff6b35',
+        'accent-secondary': '#f7c59f',
+        'accent-tertiary': '#2ec4b6',
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'sans-serif'],
-        mono: ['Space Mono', 'monospace'],
+        sans: ['Syne', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       animation: {
         'morph': 'morph 6s ease-in-out infinite',

@@ -159,7 +159,7 @@ export function ChatInput() {
         <motion.button
           onClick={handleSubmit}
           disabled={!value.trim()}
-          className="px-4 py-2 rounded-xl bg-accent/20 border border-accent/30 text-accent text-sm font-mono uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-xl bg-accent/20 border border-accent/30 text-accent text-sm font-mono uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-accent"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >

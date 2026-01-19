@@ -1,9 +1,17 @@
+// @ts-nocheck - Supabase types not generated for this project yet
 'use client'
 
 import { useEffect, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from './client'
 import { useDashboardStore } from '../store'
 import type { Message, Task, Project, AgentEvent, StreamEntry, AgentId } from '../types'
+
+// Type for session data (until proper Supabase types are generated)
+interface SessionData {
+  id: string
+  name: string
+  created_at: string
+}
 
 // Session management
 let currentSessionId: string | null = null
@@ -42,13 +50,14 @@ export function useSupabaseSync() {
     }
 
     // Create new session
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('dashboard_sessions')
       .insert({ name: `Session ${new Date().toLocaleDateString()}` })
       .select()
-      .single()
+      .single() as { data: SessionData | null; error: Error | null }
 
-    if (error) {
+    if (error || !data) {
       console.error('Failed to create session:', error)
       return null
     }

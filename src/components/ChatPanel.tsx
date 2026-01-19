@@ -15,31 +15,31 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
     >
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[85%] rounded-2xl px-4 py-3 ${
           isUser
-            ? 'bg-accent/20 border border-accent/30'
+            ? 'bg-accent/15 border border-accent/25'
             : isSystem
-            ? 'bg-purple-500/20 border border-purple-500/30'
-            : 'bg-white/5 border border-white/10'
+            ? 'bg-accent-tertiary/15 border border-accent-tertiary/25'
+            : 'bg-[var(--glass)] border border-[var(--glass-border)]'
         }`}
       >
         {/* Agent indicator */}
         {message.agentId && (
-          <div className="text-xs text-accent mb-1 font-mono uppercase">
+          <div className="text-xs text-accent mb-1 font-mono font-medium">
             {message.agentId}
           </div>
         )}
 
         {/* Message content */}
-        <div className="text-sm text-white/90 whitespace-pre-wrap">
+        <div className="text-sm text-[var(--text-main)] whitespace-pre-wrap leading-relaxed">
           {message.content}
         </div>
 
         {/* Timestamp */}
-        <div className="text-xs text-white/40 mt-2 font-mono">
+        <div className="text-xs text-[var(--text-dim)] mt-2 font-mono">
           {formatTimestamp(message.timestamp)}
         </div>
       </div>
@@ -62,7 +62,7 @@ export function ChatPanel() {
     <div className="liquid-card flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm uppercase tracking-widest text-accent font-bold">
+        <h2 className="text-base font-semibold text-accent">
           Communication
         </h2>
         {isStreaming && (
@@ -72,7 +72,7 @@ export function ChatPanel() {
             transition={{ duration: 1.5, repeat: Infinity }}
           >
             <div className="w-2 h-2 rounded-full bg-accent" />
-            <span className="text-xs text-accent font-mono">STREAMING</span>
+            <span className="text-xs text-accent font-mono font-medium">STREAMING</span>
           </motion.div>
         )}
       </div>
@@ -85,12 +85,23 @@ export function ChatPanel() {
         <AnimatePresence mode="popLayout">
           {messages.length === 0 ? (
             <motion.div
-              className="text-center text-white/40 py-8"
+              className="flex flex-col items-center justify-center py-12"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <p className="text-sm">No messages yet.</p>
-              <p className="text-xs mt-2">Send a message to begin.</p>
+              <motion.div
+                className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-4"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <motion.div
+                  className="w-8 h-8 border-2 border-[var(--text-dim)] border-t-accent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                />
+              </motion.div>
+              <p className="text-sm text-[var(--text-secondary)]">Awaiting transmission...</p>
+              <p className="text-xs text-[var(--text-dim)] mt-1 font-mono">Send a message to begin</p>
             </motion.div>
           ) : (
             messages.map(message => (
@@ -102,15 +113,15 @@ export function ChatPanel() {
         {/* Typing indicator */}
         {isStreaming && (
           <motion.div
-            className="flex gap-1 px-4 py-2"
+            className="flex gap-1.5 px-4 py-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
             {[0, 1, 2].map(i => (
               <motion.div
                 key={i}
-                className="w-2 h-2 rounded-full bg-accent/60"
-                animate={{ y: [0, -5, 0] }}
+                className="w-2 h-2 rounded-full bg-accent"
+                animate={{ y: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
                 transition={{
                   duration: 0.6,
                   repeat: Infinity,

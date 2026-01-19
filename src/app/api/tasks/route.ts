@@ -23,12 +23,11 @@ export async function POST(request: NextRequest) {
       status: 'pending',
       priority: (body.priority as TaskPriority) || 'medium',
       assignedTo: body.assignedTo || 'ceo',
-      delegatedFrom: null,
-      delegatedTo: null,
+      projectId: body.projectId || null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      completedAt: null,
-      subtasks: [],
+      streamOutput: [],
+      progress: 0,
     }
 
     tasks.push(task)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAgentById } from '@/lib/agentCatalog'
+import type { AgentId } from '@/lib/types'
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { agentId } = await params
-    const agent = getAgentById(agentId)
+    const agent = getAgentById(agentId as AgentId)
 
     if (!agent) {
       return NextResponse.json(

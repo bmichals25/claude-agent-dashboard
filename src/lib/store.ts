@@ -1,42 +1,52 @@
 import { create } from 'zustand'
-import type { 
-  Agent, 
-  AgentId, 
-  Task, 
-  Message, 
-  AgentEvent, 
+import type {
+  Agent,
+  AgentId,
+  Task,
+  Message,
+  AgentEvent,
   AgentStatus,
   Project,
   StreamEntry,
   TaskSortBy,
   TaskSortOrder,
   TaskFilters,
+  NavigationPage,
+  AgentHealthMetrics,
 } from './types'
 import { getAllAgents, getAgentConnections } from './agentCatalog'
 
 interface DashboardState {
+  // Navigation
+  currentPage: NavigationPage
+  navDrawerOpen: boolean
+
   // Agents
   agents: Agent[]
   connections: { from: AgentId; to: AgentId }[]
   activeConnections: Set<string>
-  
+
+  // Agent Health
+  agentHealth: AgentHealthMetrics[]
+  healthLastUpdated: Date | null
+
   // Projects
   projects: Project[]
-  
+
   // Tasks
   tasks: Task[]
   taskHistory: Task[]
   taskSortBy: TaskSortBy
   taskSortOrder: TaskSortOrder
   taskFilters: TaskFilters
-  
+
   // Chat
   messages: Message[]
   isStreaming: boolean
-  
+
   // Events
   events: AgentEvent[]
-  
+
   // UI State
   selectedAgentId: AgentId | null
   selectedTaskId: string | null
@@ -78,6 +88,16 @@ interface DashboardState {
   highlightConnection: (from: AgentId, to: AgentId) => void
   clearConnectionHighlight: (from: AgentId, to: AgentId) => void
   reset: () => void
+
+  // Navigation Actions
+  setCurrentPage: (page: NavigationPage) => void
+  toggleNavDrawer: () => void
+  setNavDrawerOpen: (open: boolean) => void
+
+  // Agent Health Actions
+  setAgentHealth: (health: AgentHealthMetrics[]) => void
+  updateAgentHealthMetrics: (agentId: AgentId, metrics: Partial<AgentHealthMetrics>) => void
+  refreshAgentHealth: () => Promise<void>
 }
 
 const initialAgents = getAllAgents()
@@ -85,9 +105,13 @@ const initialConnections = getAgentConnections()
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
   // Initial State
+  currentPage: 'dashboard',
+  navDrawerOpen: false,
   agents: initialAgents,
   connections: initialConnections,
   activeConnections: new Set(),
+  agentHealth: [],
+  healthLastUpdated: null,
   projects: [],
   tasks: [],
   taskHistory: [],
@@ -344,9 +368,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   reset: () => {
     set({
+      currentPage: 'dashboard',
+      navDrawerOpen: false,
       agents: initialAgents,
       connections: initialConnections,
       activeConnections: new Set(),
+      agentHealth: [],
+      healthLastUpdated: null,
       projects: [],
       tasks: [],
       taskHistory: [],
@@ -360,6 +388,34 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       selectedTaskId: null,
       showTaskBoard: false,
     })
+  },
+
+  // Navigation Actions
+  setCurrentPage: (page) => set({ currentPage: page }),
+  toggleNavDrawer: () => set(state => ({ navDrawerOpen: !state.navDrawerOpen })),
+  setNavDrawerOpen: (open) => set({ navDrawerOpen: open }),
+
+  // Agent Health Actions
+  setAgentHealth: (health) => set({ agentHealth: health, healthLastUpdated: new Date() }),
+
+  updateAgentHealthMetrics: (agentId, metrics) => {
+    set(state => ({
+      agentHealth: state.agentHealth.map(h =>
+        h.agentId === agentId ? { ...h, ...metrics } : h
+      ),
+    }))
+  },
+
+  refreshAgentHealth: async () => {
+    try {
+      const response = await fetch('/api/agent-health')
+      if (response.ok) {
+        const health = await response.json()
+        set({ agentHealth: health, healthLastUpdated: new Date() })
+      }
+    } catch (error) {
+      console.error('Failed to refresh agent health:', error)
+    }
   },
 }))
 
