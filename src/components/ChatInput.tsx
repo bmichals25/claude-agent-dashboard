@@ -128,8 +128,8 @@ export function ChatInput() {
         className="relative"
         animate={{
           boxShadow: isFocused
-            ? '0 0 20px rgba(0, 255, 240, 0.1)'
-            : '0 0 0px rgba(0, 255, 240, 0)',
+            ? '0 0 24px rgba(255, 107, 53, 0.12)'
+            : '0 0 0px rgba(255, 107, 53, 0)',
         }}
       >
         <textarea
@@ -145,21 +145,21 @@ export function ChatInput() {
         />
       </motion.div>
 
-      <div className="flex items-center justify-between mt-4">
-        <div className="flex items-center gap-3">
-          <ProjectPicker 
+      <div className="flex items-center justify-between mt-4 gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <ProjectPicker
             selectedProjectId={selectedProjectId}
             onSelect={setSelectedProjectId}
           />
-          <span className="text-xs font-mono text-white/40">
-            {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'} + Enter
+          <span className="text-caption text-mono hidden sm:inline">
+            {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter
           </span>
         </div>
 
         <motion.button
           onClick={handleSubmit}
           disabled={!value.trim()}
-          className="px-4 py-2 rounded-xl bg-accent/20 border border-accent/30 text-accent text-sm font-mono uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-accent"
+          className="btn btn-primary flex-shrink-0"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >

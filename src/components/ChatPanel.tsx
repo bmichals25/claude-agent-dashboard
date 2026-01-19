@@ -61,8 +61,8 @@ export function ChatPanel() {
   return (
     <div className="liquid-card flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-accent">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="heading-sm text-accent">
           Communication
         </h2>
         {isStreaming && (

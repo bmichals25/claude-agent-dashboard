@@ -239,14 +239,15 @@ export function TaskBoard() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             onClick={toggleTaskBoard}
-            className="fixed top-6 right-6 z-40 px-4 py-2 rounded-xl bg-[var(--bg-elevated)]/80 backdrop-blur-xl border border-[var(--glass-border)] text-[var(--text-secondary)] text-sm font-mono hover:border-[var(--glass-border-hover)] hover:text-[var(--text-main)] transition-all duration-200"
+            className="btn btn-secondary fixed top-5 right-5 z-40"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             aria-label="Show task board"
           >
-            Tasks →
+            <span>Tasks</span>
+            <span className="text-lg">→</span>
             {tasks.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-accent/15 text-accent rounded-full text-xs font-medium">
+              <span className="badge badge-accent">
                 {tasks.length}
               </span>
             )}
@@ -265,41 +266,37 @@ export function TaskBoard() {
             className="fixed top-0 right-0 w-full max-w-[700px] h-full bg-[var(--bg)]/98 backdrop-blur-xl border-l border-[var(--glass-border)] z-50 overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="p-6 border-b border-[var(--glass-border)]">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-[var(--text-main)]">Agent Task Board</h2>
+            <div className="p-5 border-b border-[var(--glass-border)]">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="heading-lg">Task Board</h2>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowProjectManager(!showProjectManager)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent ${
-                      showProjectManager ? 'bg-accent/15 text-accent' : 'text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[var(--glass)]'
-                    }`}
+                    className={`btn btn-sm ${showProjectManager ? 'btn-secondary' : 'btn-ghost'}`}
                   >
                     Projects
                   </button>
-                  <button
-                    onClick={() => setViewMode('kanban')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent ${
-                      viewMode === 'kanban' ? 'bg-accent/15 text-accent' : 'text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[var(--glass)]'
-                    }`}
-                  >
-                    Kanban
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent ${
-                      viewMode === 'list' ? 'bg-accent/15 text-accent' : 'text-[var(--text-dim)] hover:text-[var(--text-secondary)] hover:bg-[var(--glass)]'
-                    }`}
-                  >
-                    List
-                  </button>
+                  <div className="flex items-center bg-[var(--bg-surface)] rounded-lg p-0.5">
+                    <button
+                      onClick={() => setViewMode('kanban')}
+                      className={`btn btn-sm ${viewMode === 'kanban' ? 'btn-secondary' : 'btn-ghost'}`}
+                    >
+                      Kanban
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`btn btn-sm ${viewMode === 'list' ? 'btn-secondary' : 'btn-ghost'}`}
+                    >
+                      List
+                    </button>
+                  </div>
                   {/* Close button */}
                   <button
                     onClick={toggleTaskBoard}
-                    className="p-2 rounded-lg hover:bg-[var(--glass)] transition-all duration-200 text-[var(--text-dim)] hover:text-[var(--text-main)] ml-2 focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="btn btn-ghost btn-icon btn-sm ml-1"
                     aria-label="Close task board"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -307,15 +304,15 @@ export function TaskBoard() {
               </div>
 
               {/* Sort & Filter Controls */}
-              <div className="flex gap-4 flex-wrap">
+              <div className="flex items-center gap-5 flex-wrap">
                 {/* Sort By */}
                 <div className="flex items-center gap-2">
-                  <label htmlFor="sort-select" className="text-xs text-[var(--text-dim)]">Sort:</label>
+                  <label htmlFor="sort-select" className="label">Sort</label>
                   <select
                     id="sort-select"
                     value={taskSortBy}
                     onChange={(e) => setTaskSortBy(e.target.value as TaskSortBy)}
-                    className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-main)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent hover:border-[var(--glass-border-hover)] transition-colors [&>option]:bg-[var(--bg)] [&>option]:text-[var(--text-main)]"
+                    className="select"
                   >
                     {sortOptions.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -323,7 +320,7 @@ export function TaskBoard() {
                   </select>
                   <button
                     onClick={() => setTaskSortOrder(taskSortOrder === 'asc' ? 'desc' : 'asc')}
-                    className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] px-2 py-1 rounded-lg hover:bg-[var(--glass)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="btn btn-ghost btn-icon btn-sm"
                     aria-label={taskSortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
                   >
                     {taskSortOrder === 'asc' ? '↑' : '↓'}
@@ -332,12 +329,12 @@ export function TaskBoard() {
 
                 {/* Filter by Agent */}
                 <div className="flex items-center gap-2">
-                  <label htmlFor="agent-filter" className="text-xs text-[var(--text-dim)]">Agent:</label>
+                  <label htmlFor="agent-filter" className="label">Agent</label>
                   <select
                     id="agent-filter"
                     value={taskFilters.agentId || ''}
                     onChange={(e) => setTaskFilters({ agentId: (e.target.value || null) as any })}
-                    className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-main)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent hover:border-[var(--glass-border-hover)] transition-colors [&>option]:bg-[var(--bg)] [&>option]:text-[var(--text-main)]"
+                    className="select"
                   >
                     <option value="">All</option>
                     {agents.map(agent => (
@@ -348,12 +345,12 @@ export function TaskBoard() {
 
                 {/* Filter by Project */}
                 <div className="flex items-center gap-2">
-                  <label htmlFor="project-filter" className="text-xs text-[var(--text-dim)]">Project:</label>
+                  <label htmlFor="project-filter" className="label">Project</label>
                   <select
                     id="project-filter"
                     value={taskFilters.projectId || ''}
                     onChange={(e) => setTaskFilters({ projectId: e.target.value || null })}
-                    className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-main)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent hover:border-[var(--glass-border-hover)] transition-colors [&>option]:bg-[var(--bg)] [&>option]:text-[var(--text-main)]"
+                    className="select"
                   >
                     <option value="">All</option>
                     {projects.map(project => (
@@ -366,7 +363,7 @@ export function TaskBoard() {
                 {hasActiveFilters && (
                   <button
                     onClick={clearTaskFilters}
-                    className="text-xs text-accent hover:text-accent/80 focus:outline-none focus:ring-2 focus:ring-accent rounded px-2 py-1 transition-colors"
+                    className="btn btn-ghost btn-sm text-accent"
                   >
                     Clear filters
                   </button>

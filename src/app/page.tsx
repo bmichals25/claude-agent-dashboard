@@ -23,35 +23,35 @@ function DashboardContent() {
       <div className="fixed top-1/2 right-[10%] w-64 h-64 rounded-full bg-accent-secondary/[0.02] blur-[80px] pointer-events-none" />
 
       {/* Left Sidebar - Chat & Events */}
-      <aside className="w-full max-w-[400px] lg:w-[400px] h-full flex flex-col gap-4 p-4 lg:p-6 z-20 flex-shrink-0">
+      <aside className="w-full max-w-[380px] lg:w-[380px] h-full flex flex-col gap-5 pl-16 pr-5 py-5 z-20 flex-shrink-0">
         {/* Brand Header */}
-        <div className="liquid-card ml-12 reveal-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-accent">
+        <header className="liquid-card reveal-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="heading-md text-accent truncate">
                 Claude Agent
               </h1>
-              <p className="text-xs text-[var(--text-dim)] mt-0.5 font-mono">
+              <p className="text-caption text-mono mt-1">
                 19-Agent Orchestration
               </p>
             </div>
             {/* Connection Status Indicator */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <div
-                className={`w-2 h-2 rounded-full ${
-                  isConfigured ? 'bg-[var(--success)] animate-pulse' : 'bg-[var(--warning)]'
+                className={`w-2.5 h-2.5 rounded-full ${
+                  isConfigured ? 'bg-[var(--success)]' : 'bg-[var(--warning)]'
                 }`}
+                style={{ boxShadow: isConfigured ? '0 0 8px var(--success)' : '0 0 8px var(--warning)' }}
               />
-              <span className="text-xs text-[var(--text-dim)] font-mono">
+              <span className="badge badge-success text-[10px]">
                 {isConfigured ? 'Synced' : 'Local'}
               </span>
             </div>
           </div>
           {/* Skills Browser */}
-          <div className="mt-3 pt-3 border-t border-[var(--glass-border)]">
-            <SkillsBrowser />
-          </div>
-        </div>
+          <div className="divider" />
+          <SkillsBrowser />
+        </header>
 
         {/* Chat Panel */}
         <div className="flex-1 min-h-0 reveal-2">
@@ -87,7 +87,7 @@ function DashboardContent() {
 
 function AgentHealthContent() {
   return (
-    <div className="flex-1 ml-14">
+    <div className="flex-1 pl-16 pr-6">
       <AgentHealthDashboard />
     </div>
   )
@@ -95,10 +95,10 @@ function AgentHealthContent() {
 
 function AnalyticsContent() {
   return (
-    <div className="flex-1 ml-14 p-6">
-      <div className="liquid-card p-6">
-        <h1 className="text-2xl font-bold text-white mb-2">Analytics</h1>
-        <p className="text-white/50">Coming soon - Performance analytics and insights</p>
+    <div className="flex-1 pl-16 pr-6 py-6">
+      <div className="liquid-card">
+        <h1 className="heading-lg mb-3">Analytics</h1>
+        <p className="text-body">Coming soon - Performance analytics and insights</p>
       </div>
     </div>
   )
@@ -106,10 +106,10 @@ function AnalyticsContent() {
 
 function SettingsContent() {
   return (
-    <div className="flex-1 ml-14 p-6">
-      <div className="liquid-card p-6">
-        <h1 className="text-2xl font-bold text-white mb-2">Settings</h1>
-        <p className="text-white/50">Coming soon - Dashboard configuration</p>
+    <div className="flex-1 pl-16 pr-6 py-6">
+      <div className="liquid-card">
+        <h1 className="heading-lg mb-3">Settings</h1>
+        <p className="text-body">Coming soon - Dashboard configuration</p>
       </div>
     </div>
   )

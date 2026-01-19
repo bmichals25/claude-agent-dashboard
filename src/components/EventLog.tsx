@@ -55,7 +55,7 @@ export function EventLog() {
 
   return (
     <div className="liquid-card">
-      <h3 className="text-base font-semibold text-accent mb-4">
+      <h3 className="heading-sm text-accent mb-5">
         Event Stream
       </h3>
 

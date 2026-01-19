@@ -28,13 +28,13 @@ export function NavDrawer() {
       {/* Toggle Button */}
       <motion.button
         onClick={() => setNavDrawerOpen(!navDrawerOpen)}
-        className="fixed top-4 left-4 z-50 w-10 h-10 rounded-xl bg-[var(--bg-elevated)]/80 backdrop-blur-xl border border-[var(--glass-border)] flex items-center justify-center hover:border-[var(--glass-border-hover)] hover:bg-[var(--bg-elevated)] transition-all duration-300"
+        className="fixed top-5 left-5 z-50 w-11 h-11 rounded-xl bg-[var(--bg-elevated)] border border-[var(--glass-border)] flex items-center justify-center hover:border-[var(--glass-border-hover)] hover:bg-[var(--bg-surface)] transition-all shadow-lg"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         <motion.span
           animate={{ rotate: navDrawerOpen ? 90 : 0 }}
-          className="text-[var(--text-secondary)] text-lg"
+          className="text-[var(--text-secondary)] text-base"
         >
           {navDrawerOpen ? '✕' : '☰'}
         </motion.span>
@@ -48,7 +48,7 @@ export function NavDrawer() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setNavDrawerOpen(false)}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           />
         )}
       </AnimatePresence>
@@ -57,27 +57,27 @@ export function NavDrawer() {
       <AnimatePresence>
         {navDrawerOpen && (
           <motion.aside
-            initial={{ x: -280, opacity: 0 }}
+            initial={{ x: -300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -280, opacity: 0 }}
+            exit={{ x: -300, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed left-0 top-0 h-full w-[280px] bg-[var(--bg)]/95 backdrop-blur-xl border-r border-[var(--glass-border)] z-50 flex flex-col"
+            className="fixed left-0 top-0 h-full w-[300px] bg-[var(--bg)] border-r border-[var(--glass-border)] z-50 flex flex-col shadow-2xl"
           >
             {/* Header */}
             <div className="p-6 border-b border-[var(--glass-border)]">
-              <h2 className="text-xl font-bold text-accent">Navigation</h2>
-              <p className="text-xs text-[var(--text-dim)] mt-1 font-mono">Agent Orchestration System</p>
+              <h2 className="heading-lg text-accent mb-1">Navigation</h2>
+              <p className="text-caption text-mono">Agent Orchestration System</p>
             </div>
 
             {/* Nav Items */}
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className="flex-1 p-4 space-y-2">
               {NAV_ITEMS.map(item => (
                 <motion.button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                  className={`relative w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 ${
                     currentPage === item.id
-                      ? 'bg-accent/15 text-accent'
+                      ? 'bg-[var(--accent-muted)] text-accent'
                       : 'text-[var(--text-secondary)] hover:bg-[var(--glass)] hover:text-[var(--text-main)]'
                   }`}
                   whileHover={{ x: 4 }}
@@ -91,19 +91,13 @@ export function NavDrawer() {
                       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                     />
                   )}
-                  <motion.span
-                    className="text-lg"
-                    whileHover={{ rotate: 180, scale: 1.1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {item.icon}
-                  </motion.span>
-                  <span className="font-medium">{item.label}</span>
+                  <span className="text-lg w-6 text-center">{item.icon}</span>
+                  <span className="font-medium text-[15px]">{item.label}</span>
 
                   {/* Health Badge */}
                   {item.id === 'agent-health' && (criticalCount > 0 || needsAttentionCount > 0) && (
-                    <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-bold ${
-                      criticalCount > 0 ? 'bg-[var(--error)]/20 text-[var(--error)]' : 'bg-[var(--warning)]/20 text-[var(--warning)]'
+                    <span className={`ml-auto badge ${
+                      criticalCount > 0 ? 'badge-error' : 'badge-warning'
                     }`}>
                       {criticalCount > 0 ? criticalCount : needsAttentionCount}
                     </span>
@@ -113,8 +107,8 @@ export function NavDrawer() {
             </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t border-[var(--glass-border)]">
-              <div className="text-xs text-[var(--text-dim)] text-center font-mono">
+            <div className="p-5 border-t border-[var(--glass-border)]">
+              <div className="text-caption text-mono text-center">
                 19 Agents • Auto-Monitored
               </div>
             </div>
