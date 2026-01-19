@@ -29,21 +29,11 @@ export const AgentNode = memo(function AgentNode({ agent }: AgentNodeProps) {
         zIndex: isSelected ? 200 : 100,
       }}
     >
-      {/* Selection glow - simple outline that follows the agent shape */}
-      {isSelected && (
-        <div
-          className="absolute inset-0 -m-2 rounded-[inherit] animate-morph pointer-events-none"
-          style={{
-            border: `2px solid ${agent.color}`,
-            boxShadow: `0 0 20px ${agent.color}80, 0 0 40px ${agent.color}40`,
-          }}
-        />
-      )}
-
       <AgentAvatar
         agent={agent}
         size={agent.tier === 'ceo' ? 'lg' : agent.tier === 'vp' ? 'md' : 'sm'}
         onClick={handleClick}
+        isSelected={isSelected}
       />
     </div>
   )

@@ -59,9 +59,9 @@ const DEPARTMENTS = [
   },
 ]
 
-// Department positions for focused view
+// Department positions for focused view - CEO not shown separately, uses agent hierarchy
 const getDepartmentPositions = (memberCount: number): { vp: { x: number; y: number }; members: { x: number; y: number }[] } => {
-  const vpPos = { x: 50, y: 40 }
+  const vpPos = { x: 50, y: 35 }
   const members: { x: number; y: number }[] = []
 
   if (memberCount === 0) {
@@ -69,11 +69,12 @@ const getDepartmentPositions = (memberCount: number): { vp: { x: number; y: numb
   }
 
   // Spread members in an arc below the VP
-  const startX = 50 - (memberCount - 1) * 12
+  const spacing = Math.min(18, 72 / memberCount)
+  const startX = 50 - ((memberCount - 1) * spacing) / 2
   for (let i = 0; i < memberCount; i++) {
     members.push({
-      x: startX + i * 24,
-      y: 70,
+      x: startX + i * spacing,
+      y: 65,
     })
   }
 
@@ -262,18 +263,16 @@ export function AgentNetwork() {
     ))
   }, [agents])
 
-  // Department view: Get agents with custom positions
+  // Department view: Get agents with custom positions (no CEO - banner represents the hierarchy)
   const departmentAgents = useMemo(() => {
     if (viewMode !== 'department') return null
 
-    const ceoAgent = agents.find(a => a.id === 'ceo')
     const vpAgent = agents.find(a => a.id === currentDept.vpId)
     const memberAgents = currentDept.members.map(id => agents.find(a => a.id === id)).filter(Boolean)
 
     const positions = getDepartmentPositions(memberAgents.length)
 
     return {
-      ceo: ceoAgent ? { ...ceoAgent, position: { x: 50, y: 12 } } : null,
       vp: vpAgent ? { ...vpAgent, position: positions.vp } : null,
       members: memberAgents.map((agent, i) => agent ? { ...agent, position: positions.members[i] } : null).filter(Boolean),
     }
@@ -285,16 +284,7 @@ export function AgentNetwork() {
 
     const lines: { from: { x: number; y: number }; to: { x: number; y: number }; color: string }[] = []
 
-    // CEO to VP
-    if (departmentAgents.ceo && departmentAgents.vp) {
-      lines.push({
-        from: departmentAgents.ceo.position,
-        to: departmentAgents.vp.position,
-        color: departmentAgents.vp.color,
-      })
-    }
-
-    // VP to members
+    // VP to members only
     if (departmentAgents.vp) {
       departmentAgents.members.forEach(member => {
         if (member) {
@@ -407,15 +397,15 @@ export function AgentNetwork() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0"
+            className="absolute inset-0 pt-16"
           >
             {/* Department Banner with Navigation */}
-            <div className="absolute top-20 left-0 right-0 z-10 flex items-center justify-center px-8">
+            <div className="relative z-20 flex items-center justify-center px-8 mb-4">
               <div className="flex items-center gap-4 max-w-2xl w-full">
                 {/* Left Arrow */}
                 <motion.button
                   onClick={goToPrevDept}
-                  className="w-12 h-12 rounded-full bg-[var(--bg-surface)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:border-[var(--glass-border-hover)] hover:bg-[var(--glass)] transition-all shadow-lg"
+                  className="w-11 h-11 rounded-full bg-[var(--bg-surface)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:border-[var(--glass-border-hover)] hover:bg-[var(--glass)] transition-all shadow-lg flex-shrink-0"
                   whileHover={{ scale: 1.1, x: -3 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -432,35 +422,35 @@ export function AgentNetwork() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.25 }}
-                    className="flex-1 text-center py-4 px-6 rounded-2xl border relative overflow-hidden"
+                    className="flex-1 text-center py-3 px-6 rounded-2xl border relative overflow-hidden"
                     style={{
-                      background: `linear-gradient(135deg, ${currentDept.color}15 0%, transparent 100%)`,
-                      borderColor: `${currentDept.color}30`,
+                      background: `linear-gradient(135deg, ${currentDept.color}12 0%, transparent 100%)`,
+                      borderColor: `${currentDept.color}25`,
                     }}
                   >
                     {/* Glow effect */}
                     <div
-                      className="absolute inset-0 opacity-20"
+                      className="absolute inset-0 opacity-15"
                       style={{
-                        background: `radial-gradient(ellipse at center, ${currentDept.color}40 0%, transparent 70%)`,
+                        background: `radial-gradient(ellipse at center, ${currentDept.color}30 0%, transparent 70%)`,
                       }}
                     />
                     <h2
-                      className="heading-lg relative z-10"
+                      className="heading-md relative z-10"
                       style={{ color: currentDept.color }}
                     >
                       {currentDept.name}
                     </h2>
-                    <p className="text-caption relative z-10 mt-1">
+                    <p className="text-caption relative z-10 mt-0.5">
                       {currentDept.description}
                     </p>
                     {/* Progress dots */}
-                    <div className="flex items-center justify-center gap-2 mt-3 relative z-10">
+                    <div className="flex items-center justify-center gap-2 mt-2 relative z-10">
                       {DEPARTMENTS.map((dept, i) => (
                         <button
                           key={dept.id}
                           onClick={() => setCurrentDeptIndex(i)}
-                          className="w-2 h-2 rounded-full transition-all"
+                          className="w-1.5 h-1.5 rounded-full transition-all"
                           style={{
                             backgroundColor: i === currentDeptIndex ? currentDept.color : 'var(--text-dim)',
                             transform: i === currentDeptIndex ? 'scale(1.5)' : 'scale(1)',
@@ -474,7 +464,7 @@ export function AgentNetwork() {
                 {/* Right Arrow */}
                 <motion.button
                   onClick={goToNextDept}
-                  className="w-12 h-12 rounded-full bg-[var(--bg-surface)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:border-[var(--glass-border-hover)] hover:bg-[var(--glass)] transition-all shadow-lg"
+                  className="w-11 h-11 rounded-full bg-[var(--bg-surface)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:border-[var(--glass-border-hover)] hover:bg-[var(--glass)] transition-all shadow-lg flex-shrink-0"
                   whileHover={{ scale: 1.1, x: 3 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -493,12 +483,11 @@ export function AgentNetwork() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
                 transition={{ duration: 0.3 }}
-                className="absolute inset-0 pt-48"
+                className="absolute left-0 right-0 top-36 bottom-16"
               >
                 {/* SVG connections for department view */}
                 <svg
                   className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={{ zIndex: 0 }}
                   preserveAspectRatio="none"
                 >
                   {departmentConnections?.map((line, i) => (
@@ -515,11 +504,6 @@ export function AgentNetwork() {
                   ))}
                 </svg>
 
-                {/* CEO Agent */}
-                {departmentAgents.ceo && (
-                  <AgentNode key={departmentAgents.ceo.id} agent={departmentAgents.ceo} />
-                )}
-
                 {/* VP Agent */}
                 {departmentAgents.vp && (
                   <AgentNode key={departmentAgents.vp.id} agent={departmentAgents.vp} />
@@ -533,7 +517,7 @@ export function AgentNetwork() {
             </AnimatePresence>
 
             {/* Keyboard hint */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-caption flex items-center gap-4">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-caption flex items-center gap-4 z-10">
               <span className="flex items-center gap-2">
                 <kbd className="px-2 py-1 rounded bg-[var(--bg-surface)] border border-[var(--glass-border)] text-xs">←</kbd>
                 <kbd className="px-2 py-1 rounded bg-[var(--bg-surface)] border border-[var(--glass-border)] text-xs">→</kbd>

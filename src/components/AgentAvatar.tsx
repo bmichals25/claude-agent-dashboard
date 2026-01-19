@@ -114,7 +114,7 @@ export const AgentAvatar = memo(function AgentAvatar({
       >
         {/* Background mask */}
         <div
-          className={cn('absolute rounded-full', sizeClass)}
+          className={cn('absolute animate-morph', sizeClass)}
           style={{
             backgroundColor: 'var(--bg)',
             transform: 'scale(1.15)',
@@ -244,7 +244,7 @@ export const AgentAvatar = memo(function AgentAvatar({
     >
       {/* Background mask to hide connection lines */}
       <div
-        className={cn('absolute rounded-full', sizeClass)}
+        className={cn('absolute animate-morph', sizeClass)}
         style={{
           backgroundColor: 'var(--bg)',
           transform: 'scale(1.15)',
@@ -327,6 +327,7 @@ export const AgentAvatar = memo(function AgentAvatar({
             }}
           />
         )}
+        </div>
       </div>
 
       {/* Label - no animation, static */}
