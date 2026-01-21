@@ -1,129 +1,196 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useDashboardStore } from '@/lib/store'
 import { AGENT_DEFINITIONS } from '@/lib/agentCatalog'
 import type { AgentHealthMetrics, HealthStatus, AgentId } from '@/lib/types'
 
-const STATUS_CONFIG: Record<HealthStatus, { color: string; bg: string; label: string }> = {
-  excellent: { color: 'text-emerald-400', bg: 'bg-emerald-500/20', label: 'Excellent' },
-  good: { color: 'text-accent-tertiary', bg: 'bg-accent-tertiary/20', label: 'Good' },
-  needs_attention: { color: 'text-amber-400', bg: 'bg-amber-500/20', label: 'Needs Attention' },
-  critical: { color: 'text-rose-400', bg: 'bg-rose-500/20', label: 'Critical' },
+const STATUS_CONFIG: Record<HealthStatus, { color: string; bgColor: string; label: string; glow: string }> = {
+  excellent: { color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.15)', label: 'Excellent', glow: 'rgba(16, 185, 129, 0.3)' },
+  good: { color: 'var(--accent-tertiary)', bgColor: 'rgba(46, 196, 182, 0.15)', label: 'Good', glow: 'rgba(46, 196, 182, 0.3)' },
+  needs_attention: { color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)', label: 'Needs Attention', glow: 'rgba(245, 158, 11, 0.3)' },
+  critical: { color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)', label: 'Critical', glow: 'rgba(239, 68, 68, 0.3)' },
 }
 
-const TREND_ICONS: Record<string, string> = {
-  up: '↑',
-  down: '↓',
-  stable: '→',
-}
-
-function HealthCard({ health }: { health: AgentHealthMetrics }) {
+function HealthCard({ health, index }: { health: AgentHealthMetrics; index: number }) {
   const agent = AGENT_DEFINITIONS[health.agentId]
   const statusConfig = STATUS_CONFIG[health.status]
+  const agentColor = agent?.color || '#888'
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="liquid-card relative overflow-hidden"
+      transition={{ delay: index * 0.02, duration: 0.4 }}
+      style={{
+        position: 'relative',
+        borderRadius: '16px',
+        background: 'linear-gradient(135deg, rgba(255, 235, 220, 0.04) 0%, rgba(255, 235, 220, 0.01) 100%)',
+        border: '1px solid var(--glass-border)',
+        overflow: 'hidden',
+      }}
     >
-      {/* Status indicator bar */}
+      {/* Top accent bar */}
       <div
-        className={`absolute top-0 left-0 right-0 h-1 ${statusConfig.bg}`}
-        style={{ backgroundColor: agent?.color + '40' }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: `linear-gradient(90deg, ${agentColor} 0%, ${agentColor}40 100%)`,
+        }}
       />
 
-      <div className="p-4">
+      <div style={{ padding: '20px' }}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold"
-              style={{ backgroundColor: agent?.color + '20', color: agent?.color }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '15px',
+                fontWeight: 700,
+                backgroundColor: `${agentColor}20`,
+                color: agentColor,
+                border: `1px solid ${agentColor}30`,
+              }}
             >
               {agent?.displayName?.charAt(0) || '?'}
             </div>
             <div>
-              <h3 className="font-semibold text-[var(--text-main)] text-sm">
+              <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '2px' }}>
                 {agent?.displayName || health.agentId}
               </h3>
-              <p className="text-xs text-[var(--text-dim)]">{agent?.tier || 'unknown'}</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'ui-monospace, monospace' }}>
+                {agent?.tier || 'unknown'}
+              </p>
             </div>
           </div>
-          <div className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
+          <div
+            style={{
+              padding: '4px 10px',
+              borderRadius: '8px',
+              fontSize: '10px',
+              fontWeight: 600,
+              backgroundColor: statusConfig.bgColor,
+              color: statusConfig.color,
+              border: `1px solid ${statusConfig.color}30`,
+            }}
+          >
             {statusConfig.label}
           </div>
         </div>
 
         {/* Health Score */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-[var(--text-dim)]">Health Score</span>
-            <span className="text-sm font-bold" style={{ color: agent?.color }}>
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Health Score</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: agentColor }}>
               {health.healthScore}%
-              <span className={`ml-1 ${health.trend === 'up' ? 'text-green-400' : health.trend === 'down' ? 'text-red-400' : 'text-[var(--text-dim)]'}`}>
-                {TREND_ICONS[health.trend]}
+              <span style={{
+                marginLeft: '4px',
+                fontSize: '12px',
+                color: health.trend === 'up' ? '#10b981' : health.trend === 'down' ? '#ef4444' : 'var(--text-muted)',
+              }}>
+                {health.trend === 'up' ? '↑' : health.trend === 'down' ? '↓' : '→'}
               </span>
             </span>
           </div>
-          <div className="h-2 bg-[var(--glass)] rounded-full overflow-hidden">
+          <div style={{ height: '6px', borderRadius: '4px', backgroundColor: 'var(--glass)', overflow: 'hidden' }}>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${health.healthScore}%` }}
-              transition={{ duration: 1, ease: 'easeOut' }}
-              className="h-full rounded-full"
-              style={{ backgroundColor: agent?.color }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: index * 0.02 }}
+              style={{
+                height: '100%',
+                borderRadius: '4px',
+                backgroundColor: agentColor,
+                boxShadow: `0 0 10px ${agentColor}50`,
+              }}
             />
           </div>
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="bg-[var(--glass)]/50 rounded-lg p-2">
-            <div className="text-[var(--text-dim)]">Success Rate</div>
-            <div className="font-semibold text-[var(--text-main)]">{health.taskSuccessRate}%</div>
-          </div>
-          <div className="bg-[var(--glass)]/50 rounded-lg p-2">
-            <div className="text-[var(--text-dim)]">Quality</div>
-            <div className="font-semibold text-[var(--text-main)]">{health.qualityScore}/100</div>
-          </div>
-          <div className="bg-[var(--glass)]/50 rounded-lg p-2">
-            <div className="text-[var(--text-dim)]">Efficiency</div>
-            <div className="font-semibold text-[var(--text-main)]">{health.efficiency}%</div>
-          </div>
-          <div className="bg-[var(--glass)]/50 rounded-lg p-2">
-            <div className="text-[var(--text-dim)]">Error Rate</div>
-            <div className={`font-semibold ${health.errorRate > 5 ? 'text-red-400' : 'text-[var(--text-main)]'}`}>
-              {health.errorRate}%
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+          {[
+            { label: 'Success Rate', value: `${health.taskSuccessRate}%` },
+            { label: 'Quality', value: `${health.qualityScore}/100` },
+            { label: 'Efficiency', value: `${health.efficiency}%` },
+            { label: 'Error Rate', value: `${health.errorRate}%`, highlight: health.errorRate > 5 },
+          ].map((metric) => (
+            <div
+              key={metric.label}
+              style={{
+                padding: '10px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--glass)',
+                border: '1px solid var(--glass-border)',
+              }}
+            >
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>{metric.label}</div>
+              <div style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: metric.highlight ? '#ef4444' : 'var(--text-main)',
+                fontFamily: 'ui-monospace, monospace',
+              }}>
+                {metric.value}
+              </div>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Tasks Stats */}
-        <div className="mt-3 pt-3 border-t border-[var(--glass-border)] flex items-center justify-between text-xs">
-          <span className="text-[var(--text-dim)]">
+        {/* Footer stats */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingTop: '12px',
+            borderTop: '1px solid var(--glass-border)',
+          }}
+        >
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'ui-monospace, monospace' }}>
             {health.tasksCompleted}/{health.tasksAssigned} tasks
           </span>
-          <span className="text-[var(--text-dim)]">
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'ui-monospace, monospace' }}>
             Avg: {health.avgCompletionTime}min
           </span>
         </div>
 
         {/* Issues */}
         {health.issues.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-[var(--glass-border)]">
-            <div className="text-xs text-[var(--text-dim)] mb-2">Issues ({health.issues.length})</div>
-            {health.issues.slice(0, 2).map((issue) => (
+          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+              Issues ({health.issues.length})
+            </div>
+            {health.issues.slice(0, 1).map((issue) => (
               <div
                 key={issue.id}
-                className={`text-xs p-2 rounded-lg mb-1 ${
-                  issue.severity === 'critical' ? 'bg-red-500/10 text-red-400' :
-                  issue.severity === 'high' ? 'bg-orange-500/10 text-orange-400' :
-                  issue.severity === 'medium' ? 'bg-yellow-500/10 text-yellow-400' :
-                  'bg-[var(--glass)]/50 text-[var(--text-secondary)]'
-                }`}
+                style={{
+                  fontSize: '11px',
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  backgroundColor: issue.severity === 'critical' ? 'rgba(239, 68, 68, 0.1)' :
+                    issue.severity === 'high' ? 'rgba(249, 115, 22, 0.1)' :
+                    issue.severity === 'medium' ? 'rgba(234, 179, 8, 0.1)' : 'var(--glass)',
+                  color: issue.severity === 'critical' ? '#ef4444' :
+                    issue.severity === 'high' ? '#f97316' :
+                    issue.severity === 'medium' ? '#eab308' : 'var(--text-secondary)',
+                  border: `1px solid ${
+                    issue.severity === 'critical' ? 'rgba(239, 68, 68, 0.2)' :
+                    issue.severity === 'high' ? 'rgba(249, 115, 22, 0.2)' :
+                    issue.severity === 'medium' ? 'rgba(234, 179, 8, 0.2)' : 'var(--glass-border)'
+                  }`,
+                }}
               >
                 {issue.description}
               </div>
@@ -135,68 +202,78 @@ function HealthCard({ health }: { health: AgentHealthMetrics }) {
   )
 }
 
-function OverviewStats({ health }: { health: AgentHealthMetrics[] }) {
-  const avgHealth = health.length > 0
-    ? Math.round(health.reduce((sum, h) => sum + h.healthScore, 0) / health.length)
-    : 0
-
-  const criticalCount = health.filter(h => h.status === 'critical').length
-  const needsAttentionCount = health.filter(h => h.status === 'needs_attention').length
-  const excellentCount = health.filter(h => h.status === 'excellent').length
-  const totalIssues = health.reduce((sum, h) => sum + h.issues.length, 0)
-
+function StatCard({ value, label, color, delay = 0 }: {
+  value: string | number
+  label: string
+  color: string
+  delay?: number
+}) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      style={{
+        padding: '28px 32px',
+        borderRadius: '20px',
+        background: `linear-gradient(135deg, ${color}08 0%, transparent 70%)`,
+        border: `1px solid ${color}15`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Ambient glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '-50%',
+          right: '-30%',
+          width: '150px',
+          height: '150px',
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${color}10 0%, transparent 70%)`,
+          pointerEvents: 'none',
+        }}
+      />
+
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="liquid-card p-4"
+        initial={{ scale: 0.5, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.4, delay: delay + 0.1 }}
+        style={{
+          fontSize: '42px',
+          fontWeight: 700,
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+          color: color,
+          lineHeight: 1,
+          letterSpacing: '-0.03em',
+        }}
       >
-        <div className="text-3xl font-bold text-accent">{avgHealth}%</div>
-        <div className="text-xs text-[var(--text-dim)]">Avg Health Score</div>
+        {value}
       </motion.div>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.1 }}
-        className="liquid-card p-4"
+      <div
+        style={{
+          fontSize: '11px',
+          fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          color: 'var(--text-muted)',
+          marginTop: '12px',
+        }}
       >
-        <div className="text-3xl font-bold text-green-400">{excellentCount}</div>
-        <div className="text-xs text-[var(--text-dim)]">Excellent Agents</div>
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="liquid-card p-4"
-      >
-        <div className={`text-3xl font-bold ${needsAttentionCount > 0 ? 'text-yellow-400' : 'text-[var(--text-dim)]'}`}>
-          {needsAttentionCount}
-        </div>
-        <div className="text-xs text-[var(--text-dim)]">Needs Attention</div>
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3 }}
-        className="liquid-card p-4"
-      >
-        <div className={`text-3xl font-bold ${criticalCount > 0 ? 'text-red-400' : 'text-[var(--text-dim)]'}`}>
-          {criticalCount}
-        </div>
-        <div className="text-xs text-[var(--text-dim)]">Critical Issues</div>
-      </motion.div>
-    </div>
+        {label}
+      </div>
+    </motion.div>
   )
 }
 
 export function AgentHealthDashboard() {
-  const { agentHealth, healthLastUpdated, refreshAgentHealth, setAgentHealth } = useDashboardStore()
+  const { agentHealth, healthLastUpdated, refreshAgentHealth, setAgentHealth, setCurrentPage } = useDashboardStore()
+  const [filterStatus, setFilterStatus] = useState<HealthStatus | 'all'>('all')
 
-  // Initialize with mock data if empty (for demo purposes)
+  // Initialize with mock data if empty
   useEffect(() => {
     if (agentHealth.length === 0) {
-      // Generate mock health data for all agents
       const mockHealth: AgentHealthMetrics[] = Object.keys(AGENT_DEFINITIONS).map((agentId) => {
         const baseScore = 70 + Math.random() * 25
         const status: HealthStatus =
@@ -231,17 +308,26 @@ export function AgentHealthDashboard() {
     }
   }, [agentHealth.length, setAgentHealth])
 
-  // Refresh health data periodically
+  // Refresh periodically
   useEffect(() => {
-    const interval = setInterval(() => {
-      refreshAgentHealth()
-    }, 60000) // Refresh every minute
-
+    const interval = setInterval(() => refreshAgentHealth(), 60000)
     return () => clearInterval(interval)
   }, [refreshAgentHealth])
 
-  // Sort health data: critical first, then by health score
-  const sortedHealth = [...agentHealth].sort((a, b) => {
+  // Stats
+  const avgHealth = agentHealth.length > 0
+    ? Math.round(agentHealth.reduce((sum, h) => sum + h.healthScore, 0) / agentHealth.length)
+    : 0
+  const criticalCount = agentHealth.filter(h => h.status === 'critical').length
+  const needsAttentionCount = agentHealth.filter(h => h.status === 'needs_attention').length
+  const excellentCount = agentHealth.filter(h => h.status === 'excellent').length
+
+  // Filter and sort
+  const filteredHealth = filterStatus === 'all'
+    ? agentHealth
+    : agentHealth.filter(h => h.status === filterStatus)
+
+  const sortedHealth = [...filteredHealth].sort((a, b) => {
     const statusOrder = { critical: 0, needs_attention: 1, good: 2, excellent: 3 }
     const statusDiff = statusOrder[a.status] - statusOrder[b.status]
     if (statusDiff !== 0) return statusDiff
@@ -249,49 +335,137 @@ export function AgentHealthDashboard() {
   })
 
   return (
-    <div className="h-full overflow-auto p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--text-main)]">Agent Health Dashboard</h1>
-            <p className="text-sm text-[var(--text-dim)] mt-1">
-              Monitor and optimize agent performance • Auto-maintained by Agent Ops
-            </p>
-          </div>
-          <motion.button
-            onClick={() => refreshAgentHealth()}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-4 py-2 rounded-lg bg-accent/20 text-accent text-sm font-medium hover:bg-accent/30 transition-colors"
-          >
-            Refresh
-          </motion.button>
-        </div>
-        {healthLastUpdated && (
-          <p className="text-xs text-[var(--text-dim)] mt-2">
-            Last updated: {healthLastUpdated.toLocaleTimeString()}
-          </p>
-        )}
-      </div>
-
-      {/* Overview Stats */}
-      <OverviewStats health={agentHealth} />
-
-      {/* Agent Health Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <AnimatePresence>
-          {sortedHealth.map((health, index) => (
-            <motion.div
-              key={health.agentId}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+    <div className="h-full w-full overflow-auto scrollbar-fade">
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '48px 56px 120px' }}>
+        {/* Header */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={{ marginBottom: '48px' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px' }}>
+            <div>
+              <h1
+                style={{
+                  fontSize: '32px',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.2,
+                }}
+              >
+                Agent Health
+              </h1>
+              <p
+                style={{
+                  fontSize: '14px',
+                  fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+                  color: 'var(--text-dim)',
+                  marginTop: '6px',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {agentHealth.length} agents · {healthLastUpdated ? `Updated ${healthLastUpdated.toLocaleTimeString()}` : 'Loading...'}
+              </p>
+            </div>
+            <motion.button
+              onClick={() => refreshAgentHealth()}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 18px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: 500,
+                background: 'var(--accent-muted)',
+                color: 'var(--accent)',
+                border: '1px solid rgba(255, 107, 53, 0.25)',
+                cursor: 'pointer',
+              }}
             >
-              <HealthCard health={health} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 8a7 7 0 0 1 7-7 7 7 0 0 1 6 3.5M15 8a7 7 0 0 1-7 7 7 7 0 0 1-6-3.5" strokeLinecap="round" />
+                <path d="M14 1v4h-4M2 15v-4h4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Refresh
+            </motion.button>
+          </div>
+
+          {/* Stats Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            <StatCard value={`${avgHealth}%`} label="Avg Health" color="var(--accent)" delay={0} />
+            <StatCard value={excellentCount} label="Excellent" color="#10b981" delay={0.05} />
+            <StatCard value={needsAttentionCount} label="Needs Attention" color={needsAttentionCount > 0 ? '#f59e0b' : 'var(--text-muted)'} delay={0.1} />
+            <StatCard value={criticalCount} label="Critical" color={criticalCount > 0 ? '#ef4444' : 'var(--text-muted)'} delay={0.15} />
+          </div>
+        </motion.header>
+
+        {/* Filter bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '32px',
+            padding: '8px',
+            borderRadius: '16px',
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid rgba(255, 255, 255, 0.04)',
+            overflowX: 'auto',
+          }}
+          className="scrollbar-fade"
+        >
+          {(['all', 'critical', 'needs_attention', 'good', 'excellent'] as const).map((status) => {
+            const isActive = filterStatus === status
+            const config = status === 'all' ? null : STATUS_CONFIG[status]
+            const count = status === 'all' ? agentHealth.length : agentHealth.filter(h => h.status === status).length
+            return (
+              <motion.button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  background: isActive ? (config?.bgColor || 'var(--accent-muted)') : 'transparent',
+                  color: isActive ? (config?.color || 'var(--accent)') : 'var(--text-dim)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {status === 'all' ? 'All' : config?.label} ({count})
+              </motion.button>
+            )
+          })}
+        </motion.div>
+
+        {/* Agent Health Cards Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+          <AnimatePresence mode="popLayout">
+            {sortedHealth.map((health, index) => (
+              <HealthCard key={health.agentId} health={health} index={index} />
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Empty state */}
+        {sortedHealth.length === 0 && (
+          <div className="text-center py-16 text-[var(--text-muted)]">
+            No agents match the current filter.
+          </div>
+        )}
       </div>
     </div>
   )

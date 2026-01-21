@@ -34,6 +34,22 @@ interface SupabaseProviderProps {
 export function SupabaseProvider({ children }: SupabaseProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [accentColor, setAccentColor] = useState('#00fff0')
+
+  // Load accent color from localStorage for loading screen
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('dashboard-settings')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (parsed?.state?.settings?.accentColor) {
+          setAccentColor(parsed.state.settings.accentColor)
+        }
+      }
+    } catch {
+      // Use default color
+    }
+  }, [])
   
   const {
     initSession,
@@ -90,7 +106,12 @@ export function SupabaseProvider({ children }: SupabaseProviderProps) {
       <div className="h-screen w-screen flex items-center justify-center bg-bg">
         <div className="liquid-card p-8 text-center">
           <div className="animate-pulse">
-            <div className="text-accent text-lg font-semibold">Initializing Dashboard...</div>
+            <div
+              className="text-lg font-semibold"
+              style={{ color: accentColor }}
+            >
+              Initializing Dashboard...
+            </div>
             <div className="text-white/50 text-sm mt-2">Connecting to data store</div>
           </div>
         </div>

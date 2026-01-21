@@ -27,8 +27,8 @@
 
   /* Text hierarchy */
   --text-main: #faf5f0;
-  --text-secondary: #c4b8aa;
-  --text-dim: #6b5f52;
+  --text-secondary: #dcd0c0;
+  --text-dim: #8d7b6b;
   --text-muted: #4a4039;
 
   /* Gradients */
@@ -162,6 +162,16 @@ body::after {
 .liquid-card-sm {
   padding: var(--space-4);
   border-radius: var(--radius-lg);
+}
+
+/* Sidebar panel - left chat/control panel */
+.sidebar-panel {
+  padding: var(--space-5);
+  gap: var(--space-4);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, rgba(18, 18, 22, 0.6) 0%, rgba(12, 12, 16, 0.7) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.4);
 }
 
 /* ========== BUTTON SYSTEM ========== */
@@ -421,6 +431,43 @@ body::after {
   background: rgba(255, 200, 150, 0.25);
 }
 
+/* Scrollbar that fades when not in use */
+.scrollbar-fade {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.scrollbar-fade:hover,
+.scrollbar-fade:focus,
+.scrollbar-fade:active {
+  scrollbar-color: rgba(255, 200, 150, 0.2) transparent;
+}
+
+.scrollbar-fade::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-fade::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-fade::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.scrollbar-fade:hover::-webkit-scrollbar-thumb,
+.scrollbar-fade:focus::-webkit-scrollbar-thumb,
+.scrollbar-fade:active::-webkit-scrollbar-thumb {
+  background: rgba(255, 200, 150, 0.2);
+}
+
+.scrollbar-fade::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 200, 150, 0.35);
+}
+
 /* Chat Input - Refined */
 .chat-input {
   width: 100%;
@@ -560,10 +607,10 @@ body::after {
 .reveal-scale-1 { animation: reveal-scale 0.5s cubic-bezier(0.23, 1, 0.32, 1) 0.1s both; }
 .reveal-scale-2 { animation: reveal-scale 0.5s cubic-bezier(0.23, 1, 0.32, 1) 0.2s both; }
 
-/* Focus States - Accessibility */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
 /* Selection */
@@ -578,3 +625,96 @@ body::after {
 .text-accent-tertiary { color: var(--accent-tertiary); }
 .bg-accent { background-color: var(--accent); }
 .border-accent { border-color: var(--accent); }
+
+/* ========== PAGE CONTENT WRAPPER ========== */
+/* Global utility for full-page content areas with consistent margins */
+.page-content {
+  flex: 1;
+  padding: var(--space-10);  /* 40px base */
+  overflow: auto;
+}
+
+@media (min-width: 1024px) {
+  .page-content {
+    padding: var(--space-12);  /* 48px on lg */
+  }
+}
+
+@media (min-width: 1280px) {
+  .page-content {
+    padding: 4rem;  /* 64px on xl */
+  }
+}
+
+.page-content-inner {
+  max-width: 1800px;
+  margin: 0 auto;
+  height: 100%;
+}
+
+/* ========== PIPELINE SPECIFIC STYLES ========== */
+
+/* Progress bar animation */
+@keyframes progress-shine {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.progress-bar-shine {
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0%,
+    var(--accent-secondary) 50%,
+    var(--accent) 100%
+  );
+  background-size: 200% 100%;
+  animation: progress-shine 2s linear infinite;
+}
+
+/* Stage node pulse for current stage */
+@keyframes stage-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+.stage-current {
+  animation: stage-pulse 2s ease-in-out infinite;
+}
+
+/* Pipeline card interaction */
+.pipeline-card {
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.pipeline-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 40px -15px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--glass-border-hover);
+}
+
+/* Blocked status glow */
+.status-blocked {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Review status glow */
+.status-review {
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+  border-color: rgba(251, 191, 36, 0.4) !important;
+}
+
+/* Complete status glow */
+.status-complete {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}

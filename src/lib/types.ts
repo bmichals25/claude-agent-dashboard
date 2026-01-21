@@ -23,7 +23,229 @@ export type AgentId =
   | 'technical_writer'
 
 // Navigation Types
-export type NavigationPage = 'dashboard' | 'agent-health' | 'analytics' | 'settings'
+export type NavigationPage = 'ceo-overview' | 'project-detail' | 'dashboard' | 'agent-health' | 'skills-store' | 'analytics' | 'settings' | 'tasks'
+
+// ========== PIPELINE TYPES ==========
+
+export interface StageDeliverable {
+  url: string | null;
+  label: string;
+  description: string;
+}
+
+export interface PipelineProject {
+  id: string;
+  title: string;
+  subtitle?: string;
+  slug?: string; // Short URL slug (e.g., "postpilot" instead of full title)
+  stage: string;
+  stageIndex: number;
+  status: 'Not Started' | 'In Progress' | 'Blocked' | 'Review' | 'Complete';
+  progress: number;
+  priority: 'Critical' | 'High' | 'Medium' | 'Low';
+  agent: string;
+  blockers: string;
+  githubUrl: string;
+  deployUrl: string;
+  notes: string;
+  url: string;
+  isActive: boolean;
+  deliverables: {
+    intake: string | null;
+    research: string | null;
+    spec: string | null;
+    architecture: string | null;
+    design: string | null;
+    testReport: string | null;
+    securityReport: string | null;
+    documentation: string | null;
+  };
+}
+
+export interface PipelineActivity {
+  projectId: string;
+  projectTitle: string;
+  currentPhase: string;
+  currentAgent: string;
+  startedAt: Date;
+  progress: number;
+}
+
+export interface NotificationCounts {
+  blocked: number;
+  review: number;
+  agentIssues: number;
+  total: number;
+}
+
+export type StageIconName =
+  | 'inbox'
+  | 'search'
+  | 'clipboard-list'
+  | 'blocks'
+  | 'palette'
+  | 'code'
+  | 'flask-conical'
+  | 'shield-check'
+  | 'file-text'
+  | 'rocket';
+
+export interface Stage {
+  name: string;
+  icon: StageIconName;
+  color: string;
+  agent: string;
+  deliverableKey: string | null;
+  description: string;
+}
+
+export const STAGES: Stage[] = [
+  {
+    name: '1. Intake',
+    icon: 'inbox',
+    color: 'gray',
+    agent: 'CEO (Claude)',
+    deliverableKey: 'intake',
+    description: 'Project brief and requirements gathering'
+  },
+  {
+    name: '2. Research',
+    icon: 'search',
+    color: 'blue',
+    agent: 'Product Researcher',
+    deliverableKey: 'research',
+    description: 'Market research, competitor analysis, GO/NO-GO recommendation'
+  },
+  {
+    name: '3. Planning',
+    icon: 'clipboard-list',
+    color: 'purple',
+    agent: 'Product Manager',
+    deliverableKey: 'spec',
+    description: 'Product specification, MVP scope, user stories'
+  },
+  {
+    name: '4. Architecture',
+    icon: 'blocks',
+    color: 'pink',
+    agent: 'Architect',
+    deliverableKey: 'architecture',
+    description: 'Technical architecture, database schema, API design'
+  },
+  {
+    name: '5. Design',
+    icon: 'palette',
+    color: 'orange',
+    agent: 'Frontend Designer',
+    deliverableKey: 'design',
+    description: 'UI/UX mockups, design system, component specs'
+  },
+  {
+    name: '6. Development',
+    icon: 'code',
+    color: 'yellow',
+    agent: 'Developer',
+    deliverableKey: null,
+    description: 'Build and deploy application'
+  },
+  {
+    name: '7. Testing',
+    icon: 'flask-conical',
+    color: 'green',
+    agent: 'User Testing',
+    deliverableKey: 'testReport',
+    description: 'E2E tests, cross-browser, accessibility, performance'
+  },
+  {
+    name: '8. Security',
+    icon: 'shield-check',
+    color: 'red',
+    agent: 'Security Engineer',
+    deliverableKey: 'securityReport',
+    description: 'Vulnerability scan, security clearance'
+  },
+  {
+    name: '9. Documentation',
+    icon: 'file-text',
+    color: 'brown',
+    agent: 'Technical Writer',
+    deliverableKey: 'documentation',
+    description: 'README, user guide, API docs'
+  },
+  {
+    name: '10. Launched',
+    icon: 'rocket',
+    color: 'emerald',
+    agent: 'CEO (Claude)',
+    deliverableKey: null,
+    description: 'Production deployment complete'
+  },
+];
+
+// Stage color system
+export const STAGE_COLORS: Record<string, string> = {
+  gray: '#6b7280',
+  blue: '#3b82f6',
+  purple: '#8b5cf6',
+  pink: '#ec4899',
+  orange: '#f97316',
+  yellow: '#eab308',
+  green: '#22c55e',
+  red: '#ef4444',
+  brown: '#a16207',
+  emerald: '#10b981',
+};
+
+// Helper to get stage info by index
+export function getStageByIndex(index: number): Stage | undefined {
+  return STAGES[index];
+}
+
+// Helper to get stage number from stage name (e.g., "5. Design" -> 5)
+export function getStageNumber(stageName: string): number {
+  const match = stageName.match(/^(\d+)\./);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+// Helper to get stage short name (e.g., "5. Design" -> "Design")
+export function getStageShortName(stageName: string): string {
+  const parts = stageName.split('. ');
+  return parts.length > 1 ? parts[1] : stageName;
+}
+
+// Get stage color by index
+export function getStageColor(index: number): string {
+  const stage = STAGES[index];
+  if (!stage) return STAGE_COLORS.gray;
+  return STAGE_COLORS[stage.color] || STAGE_COLORS.gray;
+}
+
+export const PIPELINE_STATUS_COLORS = {
+  'Not Started': 'bg-[var(--text-muted)]',
+  'In Progress': 'bg-blue-500',
+  'Blocked': 'bg-[var(--error)]',
+  'Review': 'bg-[var(--warning)]',
+  'Complete': 'bg-[var(--success)]',
+} as const;
+
+export const PIPELINE_PRIORITY_COLORS = {
+  'Critical': 'text-[var(--error)]',
+  'High': 'text-[var(--accent)]',
+  'Medium': 'text-[var(--warning)]',
+  'Low': 'text-[var(--text-dim)]',
+} as const;
+
+// Settings Types
+export interface AppSettings {
+  appName: string
+  appTagline: string
+  theme: 'dark' | 'light' | 'system'
+  accentColor: string
+  showNotifications: boolean
+  autoScrollChat: boolean
+  soundEnabled: boolean
+  soundVolume: number // 0.0 to 1.0
+}
 
 // Agent Health Types
 export type HealthStatus = 'excellent' | 'good' | 'needs_attention' | 'critical'
@@ -83,6 +305,59 @@ export interface Project {
   createdAt: Date
   updatedAt: Date
   color: string
+  projectType?: 'quick' | 'ceo_orchestrated'
+  briefingAnswers?: BriefingAnswers
+}
+
+// Project Stats for dashboard overview
+export interface ProjectStats {
+  activeTasks: number
+  completedTasks: number
+  totalTasks: number
+  activeAgents: AgentId[]
+  lastActivityAt: Date | null
+  progressPercent: number
+}
+
+// CEO Orchestration Types - Project-specific clarifying questions
+export interface BriefingAnswers {
+  projectDescription?: string
+  targetAudience?: string
+  problemToSolve?: string
+  keyFeature?: string
+  successCriteria?: string
+}
+
+// Briefing question configuration
+export interface BriefingQuestion {
+  key: keyof BriefingAnswers
+  question: string
+  placeholder: string
+  hint?: string
+  isMultipleChoice?: boolean
+}
+
+// AI-generated options for multiple choice questions
+export interface GeneratedBriefingOptions {
+  targetAudience: string[]
+  problemToSolve: string[]
+  keyFeature: string[]
+  successCriteria: string[]
+}
+
+export interface CEOProposal {
+  summary: string
+  phases: CEOProposalPhase[]
+  totalDuration: string
+  agentCount: number
+  estimatedTasks: number
+}
+
+export interface CEOProposalPhase {
+  name: string
+  duration: string
+  agents: AgentId[]
+  description: string
 }
 
 // Task Types
@@ -145,6 +420,7 @@ export interface Message {
   content: string
   timestamp: Date
   agentId?: AgentId
+  targetAgentId?: AgentId  // Who user is talking to (null = CEO)
 }
 
 // Alias for backward compatibility

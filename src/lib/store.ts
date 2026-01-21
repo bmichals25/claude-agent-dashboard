@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type {
   Agent,
   AgentId,
@@ -7,16 +8,36 @@ import type {
   AgentEvent,
   AgentStatus,
   Project,
+  ProjectStats,
   StreamEntry,
   TaskSortBy,
   TaskSortOrder,
   TaskFilters,
   NavigationPage,
   AgentHealthMetrics,
+  AppSettings,
+  PipelineProject,
+  PipelineActivity,
+  NotificationCounts,
 } from './types'
 import { getAllAgents, getAgentConnections } from './agentCatalog'
 
+// Default settings
+const DEFAULT_SETTINGS: AppSettings = {
+  appName: 'Claude Agent',
+  appTagline: '19-Agent Orchestration',
+  theme: 'dark',
+  accentColor: '#00fff0',
+  showNotifications: true,
+  autoScrollChat: true,
+  soundEnabled: true,
+  soundVolume: 0.5,
+}
+
 interface DashboardState {
+  // Settings
+  settings: AppSettings
+
   // Navigation
   currentPage: NavigationPage
   navDrawerOpen: boolean
@@ -32,6 +53,15 @@ interface DashboardState {
 
   // Projects
   projects: Project[]
+  activeProjectId: string | null  // null = "All Projects" view
+  hasShownProjectPicker: boolean  // Session flag for startup modal
+
+  // Pipeline
+  pipelineProjects: PipelineProject[]
+  pipelineActivity: PipelineActivity | null
+  pipelineLoading: boolean
+  selectedPipelineProjectId: string | null
+  notificationCounts: NotificationCounts
 
   // Tasks
   tasks: Task[]
@@ -51,6 +81,9 @@ interface DashboardState {
   selectedAgentId: AgentId | null
   selectedTaskId: string | null
   showTaskBoard: boolean
+  showProjectsPanel: boolean
+  showNewProjectWizard: boolean
+  mainViewMode: 'agents' | 'project' | 'projects'
   
   // Agent Actions
   updateAgentStatus: (agentId: AgentId, status: AgentStatus, task?: Task) => void
@@ -58,10 +91,17 @@ interface DashboardState {
   // Project Actions
   addProject: (project: Project) => void
   updateProject: (projectId: string, updates: Partial<Project>) => void
+  archiveProject: (projectId: string) => void
+  setActiveProject: (projectId: string | null) => void
+  getActiveProject: () => Project | null
+  getProjectStats: (projectId: string) => ProjectStats
+  setHasShownProjectPicker: (shown: boolean) => void
+  getProjectFilteredTasks: () => Task[]  // Tasks filtered by active project
   
   // Task Actions
   addTask: (task: Task) => void
   updateTask: (taskId: string, updates: Partial<Task>) => void
+  deleteTask: (taskId: string) => void
   delegateTask: (fromAgentId: AgentId, toAgentId: AgentId, task: Task) => void
   completeTask: (taskId: string, output?: string) => void
   addStreamEntry: (taskId: string, entry: StreamEntry) => void
@@ -85,6 +125,9 @@ interface DashboardState {
   setSelectedAgent: (agentId: AgentId | null) => void
   setSelectedTask: (taskId: string | null) => void
   toggleTaskBoard: () => void
+  setShowProjectsPanel: (show: boolean) => void
+  setShowNewProjectWizard: (show: boolean) => void
+  setMainViewMode: (mode: 'agents' | 'project' | 'projects') => void
   highlightConnection: (from: AgentId, to: AgentId) => void
   clearConnectionHighlight: (from: AgentId, to: AgentId) => void
   reset: () => void
@@ -98,13 +141,29 @@ interface DashboardState {
   setAgentHealth: (health: AgentHealthMetrics[]) => void
   updateAgentHealthMetrics: (agentId: AgentId, metrics: Partial<AgentHealthMetrics>) => void
   refreshAgentHealth: () => Promise<void>
+
+  // Settings Actions
+  updateSettings: (updates: Partial<AppSettings>) => void
+  resetSettings: () => void
+
+  // Pipeline Actions
+  setPipelineProjects: (projects: PipelineProject[]) => void
+  setPipelineActivity: (activity: PipelineActivity | null) => void
+  setPipelineLoading: (loading: boolean) => void
+  setSelectedPipelineProject: (projectId: string | null) => void
+  refreshPipeline: () => Promise<void>
+  updatePipelineProject: (project: PipelineProject) => Promise<void>
+  getSelectedPipelineProject: () => PipelineProject | null
 }
 
 const initialAgents = getAllAgents()
 const initialConnections = getAgentConnections()
 
-export const useDashboardStore = create<DashboardState>((set, get) => ({
+export const useDashboardStore = create<DashboardState>()(
+  persist(
+    (set, get) => ({
   // Initial State
+  settings: DEFAULT_SETTINGS,
   currentPage: 'dashboard',
   navDrawerOpen: false,
   agents: initialAgents,
@@ -113,6 +172,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   agentHealth: [],
   healthLastUpdated: null,
   projects: [],
+  activeProjectId: null,
+  hasShownProjectPicker: false,
+  // Pipeline state
+  pipelineProjects: [],
+  pipelineActivity: null,
+  pipelineLoading: false,
+  selectedPipelineProjectId: null,
+  notificationCounts: { blocked: 0, review: 0, agentIssues: 0, total: 0 },
   tasks: [],
   taskHistory: [],
   taskSortBy: 'created',
@@ -124,6 +191,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   selectedAgentId: null,
   selectedTaskId: null,
   showTaskBoard: false,
+  showProjectsPanel: false,
+  showNewProjectWizard: false,
+  mainViewMode: 'agents',
 
   // Agent Actions
   updateAgentStatus: (agentId, status, task) => {
@@ -149,6 +219,83 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         p.id === projectId ? { ...p, ...updates, updatedAt: new Date() } : p
       ),
     }))
+  },
+
+  archiveProject: (projectId) => {
+    set(state => ({
+      // Archive the project
+      projects: state.projects.map(p =>
+        p.id === projectId ? { ...p, status: 'archived' as const, updatedAt: new Date() } : p
+      ),
+      // Archive all tasks belonging to this project (move to taskHistory)
+      tasks: state.tasks.filter(t => t.projectId !== projectId),
+      taskHistory: [
+        ...state.taskHistory,
+        ...state.tasks
+          .filter(t => t.projectId === projectId)
+          .map(t => ({ ...t, status: 'completed' as const, completedAt: new Date() }))
+      ],
+      // Clear active project if it was archived
+      activeProjectId: state.activeProjectId === projectId ? null : state.activeProjectId,
+    }))
+  },
+
+  setActiveProject: (projectId) => {
+    set({ activeProjectId: projectId })
+  },
+
+  getActiveProject: () => {
+    const { projects, activeProjectId } = get()
+    if (!activeProjectId) return null
+    return projects.find(p => p.id === activeProjectId) || null
+  },
+
+  getProjectStats: (projectId) => {
+    const { tasks, taskHistory } = get()
+    const projectTasks = tasks.filter(t => t.projectId === projectId)
+    const projectHistory = taskHistory.filter(t => t.projectId === projectId)
+
+    const activeTasks = projectTasks.filter(t => t.status === 'in_progress').length
+    const completedTasks = projectHistory.length
+    const totalTasks = projectTasks.length + completedTasks
+
+    // Get unique agents working on this project's tasks
+    const activeAgents = [...new Set(
+      projectTasks
+        .filter(t => t.assignedTo && t.status === 'in_progress')
+        .map(t => t.assignedTo!)
+    )]
+
+    // Find most recent activity
+    const allDates = [
+      ...projectTasks.map(t => t.updatedAt),
+      ...projectHistory.map(t => t.completedAt || t.updatedAt)
+    ].filter(Boolean) as Date[]
+    const lastActivityAt = allDates.length > 0
+      ? new Date(Math.max(...allDates.map(d => new Date(d).getTime())))
+      : null
+
+    // Calculate progress
+    const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+
+    return {
+      activeTasks,
+      completedTasks,
+      totalTasks,
+      activeAgents,
+      lastActivityAt,
+      progressPercent,
+    }
+  },
+
+  setHasShownProjectPicker: (shown) => {
+    set({ hasShownProjectPicker: shown })
+  },
+
+  getProjectFilteredTasks: () => {
+    const { tasks, activeProjectId } = get()
+    if (!activeProjectId) return tasks  // All Projects view
+    return tasks.filter(t => t.projectId === activeProjectId)
   },
 
   // Task Actions
@@ -179,6 +326,24 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         task.id === taskId ? { ...task, ...updates, updatedAt: new Date() } : task
       ),
     }))
+  },
+
+  deleteTask: (taskId) => {
+    const task = get().tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    set(state => ({
+      tasks: state.tasks.filter(t => t.id !== taskId),
+    }))
+
+    get().addEvent({
+      id: crypto.randomUUID(),
+      type: 'task_completed',
+      timestamp: new Date(),
+      agentId: task.assignedTo || 'ceo',
+      taskId: task.id,
+      message: `Task deleted: ${task.title}`,
+    })
   },
 
   delegateTask: (fromAgentId, toAgentId, task) => {
@@ -349,6 +514,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   setSelectedAgent: (agentId) => set({ selectedAgentId: agentId }),
   setSelectedTask: (taskId) => set({ selectedTaskId: taskId }),
   toggleTaskBoard: () => set(state => ({ showTaskBoard: !state.showTaskBoard })),
+  setShowProjectsPanel: (show) => set({ showProjectsPanel: show }),
+  setShowNewProjectWizard: (show) => set({ showNewProjectWizard: show }),
+  setMainViewMode: (mode) => set({ mainViewMode: mode }),
 
   highlightConnection: (from, to) => {
     const key = `${from}-${to}`
@@ -376,6 +544,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       agentHealth: [],
       healthLastUpdated: null,
       projects: [],
+      activeProjectId: null,
+      hasShownProjectPicker: false,
+      pipelineProjects: [],
+      pipelineActivity: null,
+      pipelineLoading: false,
+      selectedPipelineProjectId: null,
+      notificationCounts: { blocked: 0, review: 0, agentIssues: 0, total: 0 },
       tasks: [],
       taskHistory: [],
       taskSortBy: 'created',
@@ -387,6 +562,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       selectedAgentId: null,
       selectedTaskId: null,
       showTaskBoard: false,
+      showProjectsPanel: false,
+      mainViewMode: 'agents',
     })
   },
 
@@ -417,7 +594,102 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       console.error('Failed to refresh agent health:', error)
     }
   },
-}))
+
+  // Settings Actions
+  updateSettings: (updates) => {
+    set(state => ({
+      settings: { ...state.settings, ...updates },
+    }))
+  },
+
+  resetSettings: () => {
+    set({ settings: DEFAULT_SETTINGS })
+  },
+
+  // Pipeline Actions
+  setPipelineProjects: (projects) => {
+    // Compute notification counts when setting projects
+    const blocked = projects.filter(p => p.status === 'Blocked').length
+    const review = projects.filter(p => p.status === 'Review').length
+    const { agentHealth } = get()
+    const agentIssues = agentHealth.filter(h => h.status === 'critical' || h.status === 'needs_attention').length
+
+    set({
+      pipelineProjects: projects,
+      notificationCounts: {
+        blocked,
+        review,
+        agentIssues,
+        total: blocked + review + agentIssues,
+      },
+    })
+  },
+
+  setPipelineActivity: (activity) => {
+    set({ pipelineActivity: activity })
+  },
+
+  setPipelineLoading: (loading) => {
+    set({ pipelineLoading: loading })
+  },
+
+  setSelectedPipelineProject: (projectId) => {
+    set({ selectedPipelineProjectId: projectId })
+  },
+
+  refreshPipeline: async () => {
+    set({ pipelineLoading: true })
+    try {
+      const response = await fetch('/api/pipeline')
+      if (response.ok) {
+        const data = await response.json()
+        get().setPipelineProjects(data.projects || [])
+      }
+    } catch (error) {
+      console.error('Failed to refresh pipeline:', error)
+    } finally {
+      set({ pipelineLoading: false })
+    }
+  },
+
+  updatePipelineProject: async (project: PipelineProject) => {
+    try {
+      // Optimistically update local state
+      const { pipelineProjects } = get()
+      const updatedProjects = pipelineProjects.map(p =>
+        p.id === project.id ? project : p
+      )
+      set({ pipelineProjects: updatedProjects })
+
+      // Send update to API (which syncs with Notion)
+      const response = await fetch('/api/pipeline', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(project),
+      })
+
+      if (!response.ok) {
+        // Revert on failure
+        console.error('Failed to update project:', await response.text())
+        set({ pipelineProjects }) // Restore original
+      }
+    } catch (error) {
+      console.error('Failed to update pipeline project:', error)
+    }
+  },
+
+  getSelectedPipelineProject: () => {
+    const { pipelineProjects, selectedPipelineProjectId } = get()
+    if (!selectedPipelineProjectId) return null
+    return pipelineProjects.find(p => p.id === selectedPipelineProjectId) || null
+  },
+}),
+    {
+      name: 'dashboard-settings',
+      partialize: (state) => ({ settings: state.settings }),
+    }
+  )
+)
 
 // Alias for backward compatibility
 export const useStore = useDashboardStore

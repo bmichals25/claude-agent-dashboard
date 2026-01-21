@@ -98,27 +98,27 @@ function TaskCard({ task, expanded, onToggle }: {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-xl p-3 mb-2 cursor-pointer hover:border-[var(--glass-border-hover)] transition-all duration-200 border-l-4"
+      className="bg-[var(--glass)] border border-[var(--glass-border)] rounded-xl p-5 mb-4 cursor-pointer hover:border-[var(--glass-border-hover)] transition-all duration-200 border-l-4"
       style={{ borderLeftColor: priorityColors[task.priority] || 'var(--text-dim)' }}
       onClick={onToggle}
     >
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <h4 className="text-sm text-[var(--text-main)] font-medium flex-1" title={task.title}>
+      <div className="flex items-start justify-between gap-3">
+        <h4 className="text-sm text-[var(--text-main)] font-medium flex-1 leading-snug" title={task.title}>
           {truncate(task.title, 40)}
         </h4>
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
-          className="text-[var(--text-dim)] text-xs ml-2"
+          className="text-[var(--text-dim)] text-xs"
         >
           ▼
         </motion.span>
       </div>
 
       {/* Agent & Project Tags */}
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
+      <div className="flex items-center gap-3 mt-3 flex-wrap">
         {assignedAgent && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <div
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: assignedAgent.color }}
@@ -130,7 +130,7 @@ function TaskCard({ task, expanded, onToggle }: {
         )}
         {project && (
           <span
-            className="text-xs px-2 py-0.5 rounded-full font-mono"
+            className="text-xs px-2.5 py-1 rounded-full font-mono"
             style={{
               backgroundColor: `${project.color}15`,
               color: project.color,
@@ -142,9 +142,9 @@ function TaskCard({ task, expanded, onToggle }: {
       </div>
 
       {/* Priority & Time */}
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between mt-3">
         <span
-          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+          className={`text-xs px-2.5 py-1 rounded-full font-medium ${
             task.priority === 'critical'
               ? 'bg-[var(--error)]/15 text-[var(--error)]'
               : task.priority === 'high'
@@ -239,16 +239,19 @@ export function TaskBoard() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             onClick={toggleTaskBoard}
-            className="btn btn-secondary fixed top-5 right-5 z-40"
+            className="btn btn-icon btn-sm btn-secondary fixed top-5 right-5 z-40"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             aria-label="Show task board"
+            title="Tasks"
           >
-            <span>Tasks</span>
-            <span className="text-lg">→</span>
+            {/* Checklist/Tasks icon */}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
             {tasks.length > 0 && (
-              <span className="badge badge-accent">
-                {tasks.length}
+              <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] font-bold bg-accent text-[var(--bg)] rounded-full flex items-center justify-center">
+                {tasks.length > 9 ? '9+' : tasks.length}
               </span>
             )}
           </motion.button>
@@ -263,20 +266,20 @@ export function TaskBoard() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 w-full max-w-[700px] h-full bg-[var(--bg)]/98 backdrop-blur-xl border-l border-[var(--glass-border)] z-50 overflow-hidden flex flex-col"
+            className="fixed top-0 right-0 w-full max-w-[720px] h-full bg-[var(--bg)]/98 backdrop-blur-xl border-l border-[var(--glass-border)] z-50 overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="p-5 border-b border-[var(--glass-border)]">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="heading-lg">Task Board</h2>
-                <div className="flex items-center gap-2">
+            <div className="px-8 py-7 border-b border-[var(--glass-border)]">
+              <div className="flex items-center justify-between mb-7">
+                <h2 className="text-2xl font-semibold tracking-wide text-[var(--text-main)]">Task Board</h2>
+                <div className="flex items-center gap-4">
                   <button
                     onClick={() => setShowProjectManager(!showProjectManager)}
                     className={`btn btn-sm ${showProjectManager ? 'btn-secondary' : 'btn-ghost'}`}
                   >
                     Projects
                   </button>
-                  <div className="flex items-center bg-[var(--bg-surface)] rounded-lg p-0.5">
+                  <div className="flex items-center bg-[var(--bg-surface)] rounded-xl p-1.5 gap-1">
                     <button
                       onClick={() => setViewMode('kanban')}
                       className={`btn btn-sm ${viewMode === 'kanban' ? 'btn-secondary' : 'btn-ghost'}`}
@@ -296,7 +299,7 @@ export function TaskBoard() {
                     className="btn btn-ghost btn-icon btn-sm ml-1"
                     aria-label="Close task board"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -304,10 +307,10 @@ export function TaskBoard() {
               </div>
 
               {/* Sort & Filter Controls */}
-              <div className="flex items-center gap-5 flex-wrap">
+              <div className="flex items-center gap-8 flex-wrap">
                 {/* Sort By */}
-                <div className="flex items-center gap-2">
-                  <label htmlFor="sort-select" className="label">Sort</label>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="sort-select" className="label text-sm">Sort</label>
                   <select
                     id="sort-select"
                     value={taskSortBy}
@@ -328,8 +331,8 @@ export function TaskBoard() {
                 </div>
 
                 {/* Filter by Agent */}
-                <div className="flex items-center gap-2">
-                  <label htmlFor="agent-filter" className="label">Agent</label>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="agent-filter" className="label text-sm">Agent</label>
                   <select
                     id="agent-filter"
                     value={taskFilters.agentId || ''}
@@ -344,8 +347,8 @@ export function TaskBoard() {
                 </div>
 
                 {/* Filter by Project */}
-                <div className="flex items-center gap-2">
-                  <label htmlFor="project-filter" className="label">Project</label>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="project-filter" className="label text-sm">Project</label>
                   <select
                     id="project-filter"
                     value={taskFilters.projectId || ''}
@@ -392,25 +395,25 @@ export function TaskBoard() {
             </AnimatePresence>
 
             {/* Task Content */}
-            <div className="flex-1 overflow-hidden p-6">
+            <div className="flex-1 overflow-hidden p-7">
               {viewMode === 'kanban' ? (
-                <div className="grid grid-cols-4 gap-4 h-full">
+                <div className="grid grid-cols-4 gap-5 h-full">
                   {statusColumns.map(({ status, label, color }) => (
                     <div key={status} className="flex flex-col min-h-0">
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--glass-border)]">
                         <div
-                          className="w-2 h-2 rounded-full"
+                          className="w-2.5 h-2.5 rounded-full"
                           style={{ backgroundColor: color }}
                         />
-                        <h3 className="text-xs font-mono text-[var(--text-secondary)]">
+                        <h3 className="text-sm font-medium text-[var(--text-secondary)] tracking-wide">
                           {label}
                         </h3>
-                        <span className="text-xs text-[var(--text-dim)] font-mono">
-                          ({getTasksForStatus(status).length})
+                        <span className="text-xs text-[var(--text-dim)] font-mono ml-auto">
+                          {getTasksForStatus(status).length}
                         </span>
                       </div>
 
-                      <div className="flex-1 overflow-y-auto pr-1">
+                      <div className="flex-1 overflow-y-auto pr-2">
                         <AnimatePresence mode="popLayout">
                           {getTasksForStatus(status).map(task => (
                             <TaskCard
@@ -425,7 +428,7 @@ export function TaskBoard() {
                         </AnimatePresence>
 
                         {getTasksForStatus(status).length === 0 && (
-                          <div className="text-xs text-[var(--text-dim)] text-center py-6 font-mono">
+                          <div className="text-xs text-[var(--text-dim)] text-center py-8 font-mono">
                             No tasks
                           </div>
                         )}

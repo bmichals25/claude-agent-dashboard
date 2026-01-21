@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { useDashboardStore } from '@/lib/store'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
@@ -205,79 +206,233 @@ export function ProjectManager({ onSelectProject, selectedProjectId }: {
   )
 }
 
-// Simple dropdown version for ChatInput
-export function ProjectPicker({ 
-  selectedProjectId, 
-  onSelect 
-}: { 
+// Simple dropdown version for ChatInput - uses portal for proper layering
+export function ProjectPicker({
+  selectedProjectId,
+  onSelect
+}: {
   selectedProjectId: string | null
-  onSelect: (projectId: string | null) => void 
+  onSelect: (projectId: string | null) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const { projects } = useDashboardStore()
+  const [mounted, setMounted] = useState(false)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const { projects, setMainViewMode, pipelineProjects, refreshPipeline } = useDashboardStore()
   const selectedProject = projects.find(p => p.id === selectedProjectId)
 
+  // Refresh pipeline data when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      refreshPipeline()
+    }
+  }, [isOpen, refreshPipeline])
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setPosition({
+        top: rect.top - 8, // Position above button
+        left: rect.left,
+      })
+    }
+  }, [isOpen])
+
+  // Close on click outside
+  useEffect(() => {
+    if (!isOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [isOpen])
+
   return (
-    <div className="relative">
+    <>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 8px',
+          borderRadius: '6px',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--glass-border)',
+          fontSize: '11px',
+          color: 'var(--text-dim)',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--glass-border-hover)'
+          e.currentTarget.style.color = 'var(--text-secondary)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--glass-border)'
+          e.currentTarget.style.color = 'var(--text-dim)'
+        }}
       >
         {selectedProject ? (
           <>
-            <div 
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: selectedProject.color }}
+            <div
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: selectedProject.color,
+              }}
             />
-            <span className="max-w-[100px] truncate">{selectedProject.name}</span>
+            <span style={{ maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {selectedProject.name}
+            </span>
           </>
         ) : (
-          <span>No Project</span>
+          <span>Project</span>
         )}
-        <span className="text-white/30">▼</span>
+        <span style={{ fontSize: '8px', opacity: 0.5 }}>▼</span>
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute bottom-full left-0 mb-2 w-48 bg-bg/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl overflow-hidden z-50"
+      {mounted && isOpen && createPortal(
+        <>
+          {/* Backdrop */}
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9998,
+            }}
+            onClick={() => setIsOpen(false)}
+          />
+          {/* Dropdown */}
+          <div
+            style={{
+              position: 'fixed',
+              zIndex: 9999,
+              top: position.top,
+              left: position.left,
+              transform: 'translateY(-100%)',
+              width: '180px',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '10px',
+              boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.6)',
+              overflow: 'hidden',
+            }}
           >
-            <div className="p-2 space-y-1">
+            <div style={{ padding: '6px' }}>
+              {/* All Projects Option - Opens Full-Screen Projects Page */}
+              <button
+                onClick={() => { setMainViewMode('projects'); setIsOpen(false) }}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 10px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'background 0.15s ease',
+                  backgroundColor: 'transparent',
+                  color: 'var(--accent)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--accent-muted)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                <span>{pipelineProjects.length > 0 ? `All Projects (${pipelineProjects.length})` : 'View Pipeline'}</span>
+              </button>
+              <div style={{ height: '1px', background: 'var(--glass-border)', margin: '4px 0' }} />
+
               <button
                 onClick={() => { onSelect(null); setIsOpen(false) }}
-                className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${
-                  !selectedProjectId ? 'bg-accent/20 text-accent' : 'text-white/60 hover:bg-white/5'
-                }`}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 10px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                  backgroundColor: !selectedProjectId ? 'rgba(255, 107, 53, 0.15)' : 'transparent',
+                  color: !selectedProjectId ? 'var(--accent)' : 'var(--text-secondary)',
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedProjectId) e.currentTarget.style.backgroundColor = 'var(--glass)'
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedProjectId) e.currentTarget.style.backgroundColor = 'transparent'
+                }}
               >
                 No Project
               </button>
-              
+
               {projects.map(project => (
                 <button
                   key={project.id}
                   onClick={() => { onSelect(project.id); setIsOpen(false) }}
-                  className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center gap-2 transition-colors ${
-                    selectedProjectId === project.id 
-                      ? 'bg-accent/20 text-accent' 
-                      : 'text-white/60 hover:bg-white/5'
-                  }`}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'background 0.15s ease',
+                    backgroundColor: selectedProjectId === project.id ? 'rgba(255, 107, 53, 0.15)' : 'transparent',
+                    color: selectedProjectId === project.id ? 'var(--accent)' : 'var(--text-secondary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedProjectId !== project.id) e.currentTarget.style.backgroundColor = 'var(--glass)'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedProjectId !== project.id) e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
                 >
-                  <div 
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: project.color }}
+                  <div
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: project.color,
+                      flexShrink: 0,
+                    }}
                   />
-                  <span className="truncate">{project.name}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {project.name}
+                  </span>
                 </button>
               ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          </div>
+        </>,
+        document.body
+      )}
+    </>
   )
 }

@@ -2,7 +2,7 @@ import type { Agent, AgentId, AgentRole, AgentTier } from './types'
 
 // Agent definitions matching Claude Code's 19-agent hierarchy
 export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'currentTask'>> = {
-  // CEO Layer
+  // CEO Layer - centered at top
   ceo: {
     id: 'ceo',
     role: 'ceo',
@@ -11,12 +11,12 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: null,
     directReports: ['chief_of_staff', 'pipeline_manager', 'agent_operations', 'vp_engineering', 'vp_product', 'vp_design_qa'],
     color: '#00fff0',
-    position: { x: 50, y: 8 },
+    position: { x: 50, y: 12 },
     tools: ['all'],
     specialty: 'Strategic orchestration, user interaction, task delegation',
   },
 
-  // Leadership Layer - spread out more
+  // Leadership Layer - evenly spread across 6 positions from 15% to 85%
   chief_of_staff: {
     id: 'chief_of_staff',
     role: 'chief_of_staff',
@@ -25,7 +25,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'ceo',
     directReports: ['support_agent'],
     color: '#ff00c1',
-    position: { x: 10, y: 25 },
+    position: { x: 15, y: 28 },
     tools: ['notion', 'slack', 'calendar'],
     specialty: 'Notion ops, business tracking, admin tasks',
   },
@@ -37,7 +37,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'ceo',
     directReports: ['autopilot_agent'],
     color: '#7000ff',
-    position: { x: 25, y: 25 },
+    position: { x: 29, y: 28 },
     tools: ['notion', 'github'],
     specialty: 'Project lifecycle coordination, pipeline phases',
   },
@@ -49,12 +49,12 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'ceo',
     directReports: [],
     color: '#00ffaa',
-    position: { x: 40, y: 25 },
+    position: { x: 43, y: 28 },
     tools: ['notion', 'github', 'analytics'],
     specialty: 'Agent health monitoring, workflow optimization, new agent proposals',
   },
 
-  // VP Layer - better spacing
+  // VP Layer - evenly spread
   vp_engineering: {
     id: 'vp_engineering',
     role: 'vp_engineering',
@@ -63,7 +63,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'ceo',
     directReports: ['architect', 'developer', 'devops_engineer', 'code_reviewer', 'security_engineer'],
     color: '#00ff66',
-    position: { x: 55, y: 25 },
+    position: { x: 57, y: 28 },
     tools: ['github', 'supabase', 'terminal'],
     specialty: 'Technical execution, code quality, architecture decisions',
   },
@@ -75,7 +75,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'ceo',
     directReports: ['product_researcher', 'product_manager', 'data_engineer', 'growth_marketer'],
     color: '#ffaa00',
-    position: { x: 72, y: 25 },
+    position: { x: 71, y: 28 },
     tools: ['notion', 'perplexity', 'composio'],
     specialty: 'Product strategy, research, growth',
   },
@@ -87,7 +87,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'ceo',
     directReports: ['frontend_designer', 'user_testing', 'technical_writer'],
     color: '#ff6b6b',
-    position: { x: 88, y: 25 },
+    position: { x: 85, y: 28 },
     tools: ['figma', 'playwright', 'notion'],
     specialty: 'UX, visual design, quality assurance',
   },
@@ -101,7 +101,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'chief_of_staff',
     directReports: [],
     color: '#ff00c1',
-    position: { x: 10, y: 42 },
+    position: { x: 15, y: 44 },
     tools: ['notion', 'slack'],
     specialty: 'User feedback, FAQs, bug triage',
   },
@@ -113,12 +113,12 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'pipeline_manager',
     directReports: [],
     color: '#7000ff',
-    position: { x: 25, y: 42 },
+    position: { x: 29, y: 44 },
     tools: ['github', 'notion'],
     specialty: 'Autonomous phase approvals, workflow automation',
   },
 
-  // VP Engineering Team - two rows, well spaced
+  // VP Engineering Team - spread across two rows
   architect: {
     id: 'architect',
     role: 'architect',
@@ -163,7 +163,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'vp_engineering',
     directReports: [],
     color: '#00ff66',
-    position: { x: 26, y: 75 },
+    position: { x: 26, y: 72 },
     tools: ['github'],
     specialty: 'PR reviews, code quality, best practices',
   },
@@ -175,12 +175,12 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'vp_engineering',
     directReports: [],
     color: '#00ff66',
-    position: { x: 40, y: 75 },
+    position: { x: 38, y: 72 },
     tools: ['github', 'security_scanner'],
     specialty: 'Vulnerability scanning, security audits',
   },
 
-  // VP Product Team - two rows, well spaced
+  // VP Product Team - spread across two rows
   product_researcher: {
     id: 'product_researcher',
     role: 'product_researcher',
@@ -189,7 +189,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'vp_product',
     directReports: [],
     color: '#ffaa00',
-    position: { x: 55, y: 58 },
+    position: { x: 56, y: 58 },
     tools: ['perplexity', 'composio', 'notion'],
     specialty: 'Market research, competitive analysis, GO/NO-GO',
   },
@@ -201,7 +201,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'vp_product',
     directReports: [],
     color: '#ffaa00',
-    position: { x: 67, y: 58 },
+    position: { x: 68, y: 58 },
     tools: ['notion', 'figma'],
     specialty: 'Requirements, MVP scope, specifications',
   },
@@ -213,7 +213,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'vp_product',
     directReports: [],
     color: '#ffaa00',
-    position: { x: 55, y: 75 },
+    position: { x: 56, y: 72 },
     tools: ['supabase', 'notion'],
     specialty: 'Analytics setup, dashboards, tracking',
   },
@@ -225,12 +225,12 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'vp_product',
     directReports: [],
     color: '#ffaa00',
-    position: { x: 67, y: 75 },
+    position: { x: 68, y: 72 },
     tools: ['notion', 'composio'],
     specialty: 'Launch strategy, SEO, marketing',
   },
 
-  // VP Design & QA Team - two rows, well spaced
+  // VP Design & QA Team - spread across two rows
   frontend_designer: {
     id: 'frontend_designer',
     role: 'frontend_designer',
@@ -251,7 +251,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'vp_design_qa',
     directReports: [],
     color: '#ff6b6b',
-    position: { x: 80, y: 75 },
+    position: { x: 74, y: 72 },
     tools: ['playwright', 'puppeteer'],
     specialty: 'E2E testing, QA, test reports',
   },
@@ -263,7 +263,7 @@ export const AGENT_DEFINITIONS: Record<AgentRole, Omit<Agent, 'status' | 'curren
     reportsTo: 'vp_design_qa',
     directReports: [],
     color: '#ff6b6b',
-    position: { x: 92, y: 58 },
+    position: { x: 86, y: 58 },
     tools: ['notion', 'github'],
     specialty: 'Documentation, README, user guides',
   },

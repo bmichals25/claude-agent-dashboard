@@ -24,15 +24,15 @@ function EventItem({ event }: { event: AgentEvent }) {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      className="flex items-start gap-3 py-2.5 border-b border-[var(--glass-border)] last:border-0"
+      className="flex items-start gap-4 py-3.5 border-b border-[var(--glass-border)] last:border-0"
     >
-      <span className="text-sm text-[var(--text-dim)]">{eventIcons[event.type] || '•'}</span>
+      <span className="text-base text-[var(--text-dim)] mt-0.5">{eventIcons[event.type] || '•'}</span>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 mb-1">
           {agent && (
             <span
-              className="text-xs font-mono font-medium"
+              className="text-xs font-mono font-medium tracking-wide"
               style={{ color: agent.color }}
             >
               {agent.displayName}
@@ -42,7 +42,7 @@ function EventItem({ event }: { event: AgentEvent }) {
             {formatTimestamp(event.timestamp)}
           </span>
         </div>
-        <p className="text-sm text-[var(--text-secondary)] truncate" title={event.message}>
+        <p className="text-sm text-[var(--text-secondary)] truncate leading-relaxed" title={event.message}>
           {event.message}
         </p>
       </div>
@@ -55,17 +55,17 @@ export function EventLog() {
 
   return (
     <div className="liquid-card">
-      <h3 className="heading-sm text-accent mb-5">
+      <h3 className="text-lg font-semibold tracking-wide text-accent mb-6 pb-4 border-b border-[var(--glass-border)]">
         Event Stream
       </h3>
 
-      <div className="max-h-60 overflow-y-auto">
+      <div className="max-h-72 overflow-y-auto">
         <AnimatePresence mode="popLayout">
           {events.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-sm text-[var(--text-dim)] text-center py-6 font-mono"
+              className="text-sm text-[var(--text-dim)] text-center py-10 font-mono"
             >
               Waiting for events...
             </motion.div>

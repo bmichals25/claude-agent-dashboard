@@ -1,0 +1,1337 @@
+'use client';
+
+import { PipelineProject, STAGES, PIPELINE_STATUS_COLORS, PIPELINE_PRIORITY_COLORS } from '@/lib/types';
+import { useState } from 'react';
+import { StageDetailModal } from './StageDetailModal';
+import { StageIcon } from './StageIcon';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  ChevronLeft,
+  Github,
+  Globe,
+  FileText,
+  ExternalLink,
+  AlertTriangle,
+  Check,
+  Link2,
+  Clock,
+  Users,
+  Target,
+  Pencil,
+  X,
+  Save
+} from 'lucide-react';
+
+interface ProjectDetailViewProps {
+  project: PipelineProject;
+  onBack: () => void;
+  onUpdate?: (updatedProject: PipelineProject) => void;
+}
+
+// Status options for the dropdown
+const STATUS_OPTIONS: PipelineProject['status'][] = ['Not Started', 'In Progress', 'Blocked', 'Review', 'Complete'];
+const PRIORITY_OPTIONS: PipelineProject['priority'][] = ['Critical', 'High', 'Medium', 'Low'];
+
+// Edit Project Modal
+function EditProjectModal({
+  project,
+  onClose,
+  onSave,
+}: {
+  project: PipelineProject;
+  onClose: () => void;
+  onSave: (updatedProject: PipelineProject) => void;
+}) {
+  const [formData, setFormData] = useState<PipelineProject>({ ...project });
+  const [activeTab, setActiveTab] = useState<'general' | 'links' | 'deliverables'>('general');
+
+  const handleSave = () => {
+    onSave(formData);
+    onClose();
+  };
+
+  const updateField = <K extends keyof PipelineProject>(key: K, value: PipelineProject[K]) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const updateDeliverable = (key: keyof PipelineProject['deliverables'], value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      deliverables: { ...prev.deliverables, [key]: value || null },
+    }));
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    background: 'rgba(255, 255, 255, 0.04)',
+    color: 'var(--text-main)',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s ease',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: '12px',
+    fontWeight: 500 as const,
+    color: 'var(--text-dim)',
+    marginBottom: '8px',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.04em',
+  };
+
+  const tabStyle = (isActive: boolean) => ({
+    padding: '10px 20px',
+    fontSize: '13px',
+    fontWeight: 500,
+    color: isActive ? 'var(--accent)' : 'var(--text-dim)',
+    background: isActive ? 'rgba(255, 107, 53, 0.1)' : 'transparent',
+    border: 'none',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  });
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px',
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: '100%',
+            maxWidth: '640px',
+            maxHeight: '85vh',
+            background: 'linear-gradient(180deg, rgba(28, 28, 32, 0.98) 0%, rgba(18, 18, 22, 0.99) 100%)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 32px 64px -16px rgba(0, 0, 0, 0.6)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: '24px 28px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
+                Edit Project
+              </h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-dim)' }}>
+                Update project details and configuration
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                border: 'none',
+                background: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--text-dim)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <X style={{ width: '18px', height: '18px' }} />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div
+            style={{
+              padding: '16px 28px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+              display: 'flex',
+              gap: '8px',
+            }}
+          >
+            <button style={tabStyle(activeTab === 'general')} onClick={() => setActiveTab('general')}>
+              General
+            </button>
+            <button style={tabStyle(activeTab === 'links')} onClick={() => setActiveTab('links')}>
+              Links
+            </button>
+            <button style={tabStyle(activeTab === 'deliverables')} onClick={() => setActiveTab('deliverables')}>
+              Deliverables
+            </button>
+          </div>
+
+          {/* Content */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+            {activeTab === 'general' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Title */}
+                <div>
+                  <label style={labelStyle}>Project Title</label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => updateField('title', e.target.value)}
+                    style={inputStyle}
+                    placeholder="Enter project title"
+                  />
+                </div>
+
+                {/* Subtitle */}
+                <div>
+                  <label style={labelStyle}>Subtitle (optional)</label>
+                  <input
+                    type="text"
+                    value={formData.subtitle || ''}
+                    onChange={(e) => updateField('subtitle', e.target.value || undefined)}
+                    style={inputStyle}
+                    placeholder="e.g., AI Social Media Autoposter"
+                  />
+                </div>
+
+                {/* Status & Priority Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={labelStyle}>Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => updateField('status', e.target.value as PipelineProject['status'])}
+                      style={{ ...inputStyle, cursor: 'pointer' }}
+                    >
+                      {STATUS_OPTIONS.map(status => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Priority</label>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) => updateField('priority', e.target.value as PipelineProject['priority'])}
+                      style={{ ...inputStyle, cursor: 'pointer' }}
+                    >
+                      {PRIORITY_OPTIONS.map(priority => (
+                        <option key={priority} value={priority}>{priority}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Stage */}
+                <div>
+                  <label style={labelStyle}>Current Stage</label>
+                  <select
+                    value={formData.stageIndex}
+                    onChange={(e) => {
+                      const idx = parseInt(e.target.value);
+                      updateField('stageIndex', idx);
+                      updateField('stage', STAGES[idx]?.name || '');
+                      updateField('agent', STAGES[idx]?.agent || '');
+                    }}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    {STAGES.map((stage, idx) => (
+                      <option key={stage.name} value={idx}>{stage.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Progress */}
+                <div>
+                  <label style={labelStyle}>Progress ({Math.round(formData.progress * 100)}%)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={formData.progress}
+                    onChange={(e) => updateField('progress', parseFloat(e.target.value))}
+                    style={{
+                      width: '100%',
+                      accentColor: 'var(--accent)',
+                    }}
+                  />
+                </div>
+
+                {/* Blockers */}
+                <div>
+                  <label style={labelStyle}>Blockers</label>
+                  <textarea
+                    value={formData.blockers}
+                    onChange={(e) => updateField('blockers', e.target.value)}
+                    style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+                    placeholder="Describe any blockers..."
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label style={labelStyle}>Notes</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => updateField('notes', e.target.value)}
+                    style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
+                    placeholder="Additional notes..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'links' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Notion URL */}
+                <div>
+                  <label style={labelStyle}>Notion Page URL</label>
+                  <input
+                    type="url"
+                    value={formData.url}
+                    onChange={(e) => updateField('url', e.target.value)}
+                    style={inputStyle}
+                    placeholder="https://notion.so/..."
+                  />
+                </div>
+
+                {/* GitHub URL */}
+                <div>
+                  <label style={labelStyle}>GitHub Repository</label>
+                  <input
+                    type="url"
+                    value={formData.githubUrl}
+                    onChange={(e) => updateField('githubUrl', e.target.value)}
+                    style={inputStyle}
+                    placeholder="https://github.com/..."
+                  />
+                </div>
+
+                {/* Deploy URL */}
+                <div>
+                  <label style={labelStyle}>Live Site URL</label>
+                  <input
+                    type="url"
+                    value={formData.deployUrl}
+                    onChange={(e) => updateField('deployUrl', e.target.value)}
+                    style={inputStyle}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'deliverables' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '8px' }}>
+                  Add links to deliverable documents for each stage
+                </p>
+
+                {STAGES.filter(s => s.deliverableKey).map((stage) => (
+                  <div key={stage.deliverableKey}>
+                    <label style={labelStyle}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <StageIcon name={stage.icon} style={{ width: '14px', height: '14px' }} />
+                        {stage.name.split('. ')[1]} Deliverable
+                      </span>
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.deliverables[stage.deliverableKey as keyof typeof formData.deliverables] || ''}
+                      onChange={(e) => updateDeliverable(stage.deliverableKey as keyof PipelineProject['deliverables'], e.target.value)}
+                      style={inputStyle}
+                      placeholder={`URL to ${stage.name.split('. ')[1].toLowerCase()} document...`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: '20px 28px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '12px',
+            }}
+          >
+            <button
+              onClick={onClose}
+              style={{
+                padding: '12px 24px',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              style={{
+                padding: '12px 24px',
+                borderRadius: '12px',
+                border: 'none',
+                background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%)',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 16px rgba(255, 107, 53, 0.3)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Save style={{ width: '16px', height: '16px' }} />
+              Save Changes
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// Circular progress with animated stroke
+function ProgressCircle({ progress, size = 140 }: { progress: number; size?: number }) {
+  const strokeWidth = 6;
+  const radius = (size - strokeWidth * 2) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        {/* Background track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.06)"
+          strokeWidth={strokeWidth}
+        />
+        {/* Progress arc */}
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="url(#progressGradientDetail)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
+          style={{ filter: 'drop-shadow(0 0 8px rgba(255, 107, 53, 0.4))' }}
+        />
+        <defs>
+          <linearGradient id="progressGradientDetail" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="var(--accent)" />
+            <stop offset="100%" stopColor="var(--accent-secondary)" />
+          </linearGradient>
+        </defs>
+      </svg>
+      {/* Center content */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <motion.span
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          style={{
+            fontSize: '36px',
+            fontWeight: 700,
+            fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+            color: 'var(--text-main)',
+            lineHeight: 1,
+          }}
+        >
+          {progress}%
+        </motion.span>
+        <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px', letterSpacing: '0.08em' }}>
+          COMPLETE
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Stage node in pipeline visualization
+function StageNode({
+  stage,
+  index,
+  isCompleted,
+  isCurrent,
+  hasDeliverable,
+  isBlocked,
+  onClick,
+}: {
+  stage: typeof STAGES[0];
+  index: number;
+  isCompleted: boolean;
+  isCurrent: boolean;
+  hasDeliverable: boolean;
+  isBlocked: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      onClick={onClick}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="flex flex-col items-center group"
+      style={{ minWidth: '80px' }}
+    >
+      {/* Node */}
+      <motion.div
+        whileHover={{ scale: 1.1, y: -2 }}
+        whileTap={{ scale: 0.95 }}
+        className="relative"
+        style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: isCompleted
+            ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+            : isCurrent
+              ? isBlocked
+                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                : 'linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%)'
+              : 'rgba(255, 255, 255, 0.04)',
+          border: isCompleted || isCurrent ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: isCompleted
+            ? '0 8px 24px -4px rgba(34, 197, 94, 0.35)'
+            : isCurrent
+              ? isBlocked
+                ? '0 8px 24px -4px rgba(239, 68, 68, 0.35)'
+                : '0 8px 24px -4px rgba(255, 107, 53, 0.35)'
+              : 'none',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+        }}
+      >
+        {isCompleted ? (
+          <Check className="w-6 h-6 text-white" strokeWidth={3} />
+        ) : (
+          <StageIcon
+            name={stage.icon}
+            className="w-5 h-5"
+            style={{ color: isCurrent ? 'white' : 'var(--text-dim)' }}
+          />
+        )}
+
+        {/* Deliverable indicator */}
+        {hasDeliverable && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1"
+            style={{
+              width: '16px',
+              height: '16px',
+              borderRadius: '50%',
+              background: '#fbbf24',
+              border: '2px solid var(--bg)',
+              boxShadow: '0 2px 8px rgba(251, 191, 36, 0.4)',
+            }}
+          />
+        )}
+      </motion.div>
+
+      {/* Label */}
+      <div className="mt-3 text-center">
+        <p
+          style={{
+            fontSize: '12px',
+            fontWeight: 500,
+            color: isCurrent
+              ? 'var(--text-main)'
+              : isCompleted
+                ? '#22c55e'
+                : 'var(--text-dim)',
+            transition: 'color 0.2s ease',
+          }}
+        >
+          {stage.name.split('. ')[1]}
+        </p>
+        <p
+          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{
+            fontSize: '10px',
+            color: 'var(--text-muted)',
+            marginTop: '2px',
+          }}
+        >
+          {stage.agent}
+        </p>
+      </div>
+    </motion.button>
+  );
+}
+
+// Quick stat card
+function StatCard({ icon: Icon, label, value, color, delay = 0 }: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  color: string;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      style={{
+        padding: '20px',
+        borderRadius: '16px',
+        background: 'rgba(255, 255, 255, 0.02)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '12px',
+            background: `${color}15`,
+            border: `1px solid ${color}25`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon style={{ width: '18px', height: '18px', color }} />
+        </div>
+        <div>
+          <p style={{ fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            {label}
+          </p>
+          <p style={{ fontSize: '18px', fontWeight: 600, fontFamily: '"JetBrains Mono", ui-monospace, monospace', color: 'var(--text-main)', marginTop: '2px' }}>
+            {value}
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Deliverable row item
+function DeliverableRow({
+  stage,
+  isCompleted,
+  isCurrent,
+  deliverableUrl,
+  index,
+}: {
+  stage: typeof STAGES[0];
+  isCompleted: boolean;
+  isCurrent: boolean;
+  deliverableUrl: string | null;
+  index: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.3 + index * 0.04 }}
+      className={`flex items-center gap-4 transition-colors ${deliverableUrl ? 'cursor-pointer hover:bg-white/[0.02]' : ''}`}
+      style={{
+        padding: '16px 20px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+      }}
+      onClick={() => deliverableUrl && window.open(deliverableUrl, '_blank')}
+    >
+      {/* Stage Icon */}
+      <div
+        style={{
+          width: '44px',
+          height: '44px',
+          borderRadius: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: isCompleted
+            ? 'rgba(34, 197, 94, 0.12)'
+            : isCurrent
+              ? 'rgba(255, 107, 53, 0.12)'
+              : 'rgba(255, 255, 255, 0.03)',
+          border: `1px solid ${isCompleted ? 'rgba(34, 197, 94, 0.2)' : isCurrent ? 'rgba(255, 107, 53, 0.2)' : 'rgba(255, 255, 255, 0.06)'}`,
+          flexShrink: 0,
+        }}
+      >
+        <StageIcon
+          name={stage.icon}
+          style={{
+            width: '20px',
+            height: '20px',
+            color: isCompleted
+              ? '#22c55e'
+              : isCurrent
+                ? 'var(--accent)'
+                : 'var(--text-dim)',
+          }}
+        />
+      </div>
+
+      {/* Stage Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p
+          style={{
+            fontSize: '14px',
+            fontWeight: 500,
+            color: isCompleted || isCurrent ? 'var(--text-main)' : 'var(--text-dim)',
+          }}
+        >
+          {stage.name.split('. ')[1]}
+        </p>
+        <p
+          style={{
+            fontSize: '12px',
+            color: 'var(--text-dim)',
+            marginTop: '2px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {stage.description}
+        </p>
+      </div>
+
+      {/* Status Badge */}
+      <div
+        style={{
+          padding: '6px 12px',
+          borderRadius: '8px',
+          fontSize: '11px',
+          fontWeight: 500,
+          background: isCompleted
+            ? 'rgba(34, 197, 94, 0.12)'
+            : isCurrent
+              ? 'rgba(255, 107, 53, 0.12)'
+              : 'rgba(255, 255, 255, 0.04)',
+          color: isCompleted
+            ? '#22c55e'
+            : isCurrent
+              ? 'var(--accent)'
+              : 'var(--text-muted)',
+        }}
+      >
+        {isCompleted ? 'Complete' : isCurrent ? 'In Progress' : 'Pending'}
+      </div>
+
+      {/* Link Icon */}
+      <div style={{ width: '32px', display: 'flex', justifyContent: 'center' }}>
+        {deliverableUrl ? (
+          <ExternalLink style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
+        ) : (
+          <Link2 style={{ width: '16px', height: '16px', color: 'var(--text-muted)', opacity: 0.4 }} />
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+export function ProjectDetailView({ project, onBack, onUpdate }: ProjectDetailViewProps) {
+  const [selectedStage, setSelectedStage] = useState<number | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const completedStages = project.stageIndex;
+  const totalStages = STAGES.length;
+  const overallProgress = Math.round((completedStages / totalStages) * 100);
+
+  const handleSaveProject = (updatedProject: PipelineProject) => {
+    onUpdate?.(updatedProject);
+  };
+
+  return (
+    <div className="h-full overflow-hidden flex flex-col" style={{ background: 'var(--bg)' }}>
+      {/* Ambient background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse 60% 40% at 70% 10%, rgba(255, 107, 53, 0.06) 0%, transparent 50%),
+            radial-gradient(ellipse 50% 30% at 20% 80%, rgba(99, 102, 241, 0.04) 0%, transparent 50%)
+          `,
+        }}
+      />
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto scrollbar-fade">
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 48px 100px' }}>
+
+          {/* Hero Section */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              gap: '48px',
+              alignItems: 'center',
+              padding: '40px',
+              borderRadius: '24px',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              marginBottom: '40px',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Background decoration */}
+            <div
+              className="absolute top-0 right-0 w-[400px] h-[400px] pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle, rgba(255, 107, 53, 0.08) 0%, transparent 60%)',
+                transform: 'translate(30%, -30%)',
+              }}
+            />
+
+            {/* Edit Button - Top Right */}
+            <motion.button
+              onClick={() => setIsEditModalOpen(true)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="absolute"
+              style={{
+                top: '20px',
+                right: '20px',
+                width: '44px',
+                height: '44px',
+                borderRadius: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--text-dim)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                zIndex: 10,
+              }}
+              title="Edit project details"
+            >
+              <Pencil style={{ width: '18px', height: '18px' }} />
+            </motion.button>
+
+            <div className="relative">
+              {/* Badges */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <span
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    background: project.status === 'Blocked'
+                      ? 'rgba(239, 68, 68, 0.15)'
+                      : project.status === 'Complete'
+                        ? 'rgba(34, 197, 94, 0.15)'
+                        : 'rgba(255, 107, 53, 0.15)',
+                    color: project.status === 'Blocked'
+                      ? '#ef4444'
+                      : project.status === 'Complete'
+                        ? '#22c55e'
+                        : 'var(--accent)',
+                  }}
+                >
+                  {project.status}
+                </span>
+                <span
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: project.priority === 'Critical'
+                      ? '#ef4444'
+                      : project.priority === 'High'
+                        ? '#fbbf24'
+                        : 'var(--text-secondary)',
+                  }}
+                >
+                  {project.priority} Priority
+                </span>
+              </div>
+
+              {/* Title */}
+              <h1
+                style={{
+                  fontSize: '32px',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  lineHeight: 1.2,
+                  marginBottom: '16px',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {project.title}
+              </h1>
+
+              {/* Stage info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <StageIcon
+                    name={STAGES[project.stageIndex]?.icon}
+                    style={{ width: '18px', height: '18px', color: 'var(--text-secondary)' }}
+                  />
+                </div>
+                <div>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                    Currently in <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>{project.stage}</span>
+                  </p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginTop: '2px' }}>
+                    Assigned to {project.agent}
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Action Links */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '24px' }}>
+                {project.deployUrl && (
+                  <a
+                    href={project.deployUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 16px',
+                      borderRadius: '10px',
+                      background: 'rgba(34, 197, 94, 0.1)',
+                      border: '1px solid rgba(34, 197, 94, 0.2)',
+                      color: '#22c55e',
+                      textDecoration: 'none',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <Globe style={{ width: '16px', height: '16px' }} />
+                    Live Site
+                    <ExternalLink style={{ width: '12px', height: '12px', opacity: 0.6 }} />
+                  </a>
+                )}
+                <a
+                  href={project.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: 'var(--text-secondary)',
+                    textDecoration: 'none',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <FileText style={{ width: '16px', height: '16px' }} />
+                  Notion
+                  <ExternalLink style={{ width: '12px', height: '12px', opacity: 0.6 }} />
+                </a>
+                {project.githubUrl && (
+                  <a
+                    href={project.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 16px',
+                      borderRadius: '10px',
+                      background: 'rgba(168, 85, 247, 0.08)',
+                      border: '1px solid rgba(168, 85, 247, 0.15)',
+                      color: '#a855f7',
+                      textDecoration: 'none',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <Github style={{ width: '16px', height: '16px' }} />
+                    GitHub
+                    <ExternalLink style={{ width: '12px', height: '12px', opacity: 0.6 }} />
+                  </a>
+                )}
+              </div>
+
+              {/* Blocker Alert */}
+              {project.blockers && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  style={{
+                    marginTop: '24px',
+                    padding: '16px 20px',
+                    borderRadius: '14px',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '14px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <AlertTriangle style={{ width: '18px', height: '18px', color: '#ef4444' }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: '#ef4444', marginBottom: '4px' }}>
+                      Blocker Detected
+                    </p>
+                    <p style={{ fontSize: '13px', color: 'rgba(239, 68, 68, 0.85)', lineHeight: 1.5 }}>
+                      {project.blockers}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Progress Circle */}
+            <div className="relative">
+              <ProgressCircle progress={overallProgress} />
+            </div>
+          </motion.section>
+
+          {/* Pipeline Stages */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            style={{
+              padding: '32px',
+              borderRadius: '24px',
+              background: 'rgba(255, 255, 255, 0.015)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              marginBottom: '32px',
+            }}
+          >
+            <div style={{ marginBottom: '28px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                Pipeline Progress
+              </h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-dim)' }}>
+                Click any stage to view details and deliverables
+              </p>
+            </div>
+
+            {/* Progress track */}
+            <div className="relative" style={{ padding: '0 20px' }}>
+              {/* Background line */}
+              <div
+                className="absolute"
+                style={{
+                  top: '28px',
+                  left: '60px',
+                  right: '60px',
+                  height: '3px',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  borderRadius: '2px',
+                }}
+              />
+              {/* Progress line */}
+              <motion.div
+                className="absolute"
+                initial={{ width: 0 }}
+                animate={{ width: `${(project.stageIndex / (STAGES.length - 1)) * 100}%` }}
+                transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+                style={{
+                  top: '28px',
+                  left: '60px',
+                  maxWidth: 'calc(100% - 120px)',
+                  height: '3px',
+                  background: 'linear-gradient(90deg, var(--accent), var(--accent-secondary))',
+                  borderRadius: '2px',
+                  boxShadow: '0 0 12px rgba(255, 107, 53, 0.4)',
+                }}
+              />
+
+              {/* Stage nodes */}
+              <div className="relative flex justify-between">
+                {STAGES.map((stage, idx) => {
+                  const isCompleted = idx < project.stageIndex;
+                  const isCurrent = idx === project.stageIndex;
+                  const hasDeliverable = stage.deliverableKey &&
+                    project.deliverables[stage.deliverableKey as keyof typeof project.deliverables];
+
+                  return (
+                    <StageNode
+                      key={stage.name}
+                      stage={stage}
+                      index={idx}
+                      isCompleted={isCompleted}
+                      isCurrent={isCurrent}
+                      hasDeliverable={!!hasDeliverable}
+                      isBlocked={isCurrent && project.status === 'Blocked'}
+                      onClick={() => setSelectedStage(idx)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </motion.section>
+
+          {/* Two Column Layout */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '24px' }}>
+            {/* Deliverables List */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              style={{
+                borderRadius: '24px',
+                background: 'rgba(255, 255, 255, 0.015)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{ padding: '24px 28px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
+                  Deliverables
+                </h2>
+                <p style={{ fontSize: '13px', color: 'var(--text-dim)' }}>
+                  Documents and artifacts from each stage
+                </p>
+              </div>
+
+              <div>
+                {STAGES.filter(s => s.deliverableKey).map((stage, idx) => {
+                  const stageIdx = STAGES.findIndex(s => s.name === stage.name);
+                  const isCompleted = stageIdx < project.stageIndex;
+                  const isCurrent = stageIdx === project.stageIndex;
+                  const deliverableUrl = project.deliverables[stage.deliverableKey as keyof typeof project.deliverables];
+
+                  return (
+                    <DeliverableRow
+                      key={stage.name}
+                      stage={stage}
+                      isCompleted={isCompleted}
+                      isCurrent={isCurrent}
+                      deliverableUrl={deliverableUrl}
+                      index={idx}
+                    />
+                  );
+                })}
+              </div>
+            </motion.section>
+
+            {/* Sidebar */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Stats Cards */}
+              <StatCard
+                icon={Target}
+                label="Stages Completed"
+                value={`${project.stageIndex} / ${STAGES.length}`}
+                color="var(--accent)"
+                delay={0.3}
+              />
+              <StatCard
+                icon={Clock}
+                label="Task Progress"
+                value={`${Math.round(project.progress * 100)}%`}
+                color="#3b82f6"
+                delay={0.35}
+              />
+              <StatCard
+                icon={Users}
+                label="Current Agent"
+                value={project.agent.split(' ')[0]}
+                color="#22c55e"
+                delay={0.4}
+              />
+
+              {/* Notes Card */}
+              {project.notes && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45 }}
+                  style={{
+                    padding: '20px',
+                    borderRadius: '16px',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                  }}
+                >
+                  <p style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '10px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    Notes
+                  </p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    {project.notes}
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Dev Links */}
+              {(project.githubUrl || project.deployUrl) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  style={{
+                    padding: '20px',
+                    borderRadius: '16px',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                  }}
+                >
+                  <p style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '14px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    Development
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {project.githubUrl && (
+                      <a
+                        href={project.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 14px',
+                          borderRadius: '12px',
+                          background: 'rgba(168, 85, 247, 0.08)',
+                          border: '1px solid rgba(168, 85, 247, 0.15)',
+                          color: '#a855f7',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <Github style={{ width: '18px', height: '18px' }} />
+                        <span style={{ flex: 1 }}>Repository</span>
+                        <ExternalLink style={{ width: '14px', height: '14px', opacity: 0.6 }} />
+                      </a>
+                    )}
+                    {project.deployUrl && (
+                      <a
+                        href={project.deployUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 14px',
+                          borderRadius: '12px',
+                          background: 'rgba(34, 197, 94, 0.08)',
+                          border: '1px solid rgba(34, 197, 94, 0.15)',
+                          color: '#22c55e',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <Globe style={{ width: '18px', height: '18px' }} />
+                        <span style={{ flex: 1 }}>Live Site</span>
+                        <ExternalLink style={{ width: '14px', height: '14px', opacity: 0.6 }} />
+                      </a>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stage Detail Modal */}
+      {selectedStage !== null && (
+        <StageDetailModal
+          project={project}
+          stageIndex={selectedStage}
+          onClose={() => setSelectedStage(null)}
+        />
+      )}
+
+      {/* Edit Project Modal */}
+      {isEditModalOpen && (
+        <EditProjectModal
+          project={project}
+          onClose={() => setIsEditModalOpen(false)}
+          onSave={handleSaveProject}
+        />
+      )}
+    </div>
+  );
+}
