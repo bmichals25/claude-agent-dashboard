@@ -114,3 +114,73 @@ export async function GET() {
     );
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { title, priority = 'Medium', stage = '1. Intake' } = body;
+
+    if (!title) {
+      return NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!NOTION_TOKEN || !PIPELINE_DB) {
+      return NextResponse.json(
+        { error: 'Notion not configured' },
+        { status: 500 }
+      );
+    }
+
+    const response = await fetch('https://api.notion.com/v1/pages', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${NOTION_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28',
+      },
+      body: JSON.stringify({
+        parent: { database_id: PIPELINE_DB },
+        properties: {
+          Project: {
+            title: [{ text: { content: title } }]
+          },
+          Stage: {
+            select: { name: stage }
+          },
+          Status: {
+            select: { name: 'Not Started' }
+          },
+          Priority: {
+            select: { name: priority }
+          },
+          Progress: {
+            number: 0
+          },
+          Active: {
+            checkbox: true
+          }
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Notion API error:', errorData);
+      throw new Error(`Notion API error: ${response.status}`);
+    }
+
+    const page = await response.json();
+    const project = parseProject(page);
+
+    return NextResponse.json({ project });
+  } catch (error) {
+    console.error('Failed to create project:', error);
+    return NextResponse.json(
+      { error: 'Failed to create project' },
+      { status: 500 }
+    );
+  }
+}

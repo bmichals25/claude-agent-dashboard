@@ -675,7 +675,7 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
     }
   }, [name])
 
-  const { addProject, setActiveProject, addTask } = useDashboardStore()
+  const { addProject, setActiveProject, addTask, addPipelineProject, setSelectedPipelineProject, setCurrentPage, setMainViewMode } = useDashboardStore()
   const { saveProject, isConfigured } = useSupabase()
 
   // Calculate step number and total (briefing has sub-steps)
@@ -833,45 +833,131 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
 
     setStep('launching')
 
-    const project: Project = {
-      id: generateId(),
-      name: name.trim(),
-      status: 'active',
-      color,
-      projectType,
-      briefingAnswers: projectType === 'ceo_orchestrated' ? briefingAnswers : undefined,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+    try {
+      // Create project in Notion via pipeline API
+      const response = await fetch('/api/pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: name.trim(),
+          priority: 'Medium',
+          stage: '1. Intake',
+        }),
+      })
 
-    addProject(project)
+      if (response.ok) {
+        const { project: pipelineProject } = await response.json()
 
-    if (projectType === 'ceo_orchestrated' && proposal) {
-      const initialTask: Task = {
+        // Add to pipeline projects in store
+        addPipelineProject(pipelineProject)
+
+        // Also create local project for task management
+        const project: Project = {
+          id: pipelineProject.id,
+          name: name.trim(),
+          status: 'active',
+          color,
+          projectType,
+          briefingAnswers: projectType === 'ceo_orchestrated' ? briefingAnswers : undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+
+        addProject(project)
+
+        if (projectType === 'ceo_orchestrated' && proposal) {
+          const initialTask: Task = {
+            id: generateId(),
+            title: `Phase 1: ${proposal.phases[0]?.name || 'Research'}`,
+            description: proposal.phases[0]?.description || 'Initial project research and analysis',
+            status: 'pending',
+            priority: 'high',
+            assignedTo: 'product_researcher',
+            projectId: project.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            streamOutput: [],
+            progress: 0,
+          }
+          addTask(initialTask)
+        }
+
+        if (isConfigured) {
+          await saveProject(project)
+        }
+
+        setTimeout(() => {
+          setActiveProject(project.id)
+          setSelectedPipelineProject(pipelineProject.id)
+          setCurrentPage('project-detail')
+          setMainViewMode('project')
+          onClose()
+        }, 2500)
+      } else {
+        // Fallback to local-only project if API fails
+        console.error('Failed to create project in Notion, creating locally')
+
+        const project: Project = {
+          id: generateId(),
+          name: name.trim(),
+          status: 'active',
+          color,
+          projectType,
+          briefingAnswers: projectType === 'ceo_orchestrated' ? briefingAnswers : undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+
+        addProject(project)
+
+        if (projectType === 'ceo_orchestrated' && proposal) {
+          const initialTask: Task = {
+            id: generateId(),
+            title: `Phase 1: ${proposal.phases[0]?.name || 'Research'}`,
+            description: proposal.phases[0]?.description || 'Initial project research and analysis',
+            status: 'pending',
+            priority: 'high',
+            assignedTo: 'product_researcher',
+            projectId: project.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            streamOutput: [],
+            progress: 0,
+          }
+          addTask(initialTask)
+        }
+
+        if (isConfigured) {
+          await saveProject(project)
+        }
+
+        setTimeout(() => {
+          setActiveProject(project.id)
+          onClose()
+        }, 2500)
+      }
+    } catch (error) {
+      console.error('Error creating project:', error)
+      // Create local project on error
+      const project: Project = {
         id: generateId(),
-        title: `Phase 1: ${proposal.phases[0]?.name || 'Research'}`,
-        description: proposal.phases[0]?.description || 'Initial project research and analysis',
-        status: 'pending',
-        priority: 'high',
-        assignedTo: 'product_researcher',
-        projectId: project.id,
+        name: name.trim(),
+        status: 'active',
+        color,
+        projectType,
+        briefingAnswers: projectType === 'ceo_orchestrated' ? briefingAnswers : undefined,
         createdAt: new Date(),
         updatedAt: new Date(),
-        streamOutput: [],
-        progress: 0,
       }
-      addTask(initialTask)
-    }
 
-    if (isConfigured) {
-      await saveProject(project)
-    }
+      addProject(project)
 
-    setTimeout(() => {
-      setActiveProject(project.id)
-      onClose()
-    }, 2500)
-  }, [name, color, projectType, briefingAnswers, proposal, addProject, addTask, saveProject, isConfigured, setActiveProject, onClose])
+      setTimeout(() => {
+        setActiveProject(project.id)
+        onClose()
+      }, 2500)
+    }
+  }, [name, color, projectType, briefingAnswers, proposal, addProject, addTask, addPipelineProject, setSelectedPipelineProject, setCurrentPage, setMainViewMode, saveProject, isConfigured, setActiveProject, onClose])
 
   // Handle keyboard navigation
   useEffect(() => {

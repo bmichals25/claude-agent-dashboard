@@ -148,6 +148,7 @@ interface DashboardState {
 
   // Pipeline Actions
   setPipelineProjects: (projects: PipelineProject[]) => void
+  addPipelineProject: (project: PipelineProject) => void
   setPipelineActivity: (activity: PipelineActivity | null) => void
   setPipelineLoading: (loading: boolean) => void
   setSelectedPipelineProject: (projectId: string | null) => void
@@ -625,6 +626,12 @@ export const useDashboardStore = create<DashboardState>()(
     })
   },
 
+  addPipelineProject: (project) => {
+    set(state => ({
+      pipelineProjects: [project, ...state.pipelineProjects],
+    }))
+  },
+
   setPipelineActivity: (activity) => {
     set({ pipelineActivity: activity })
   },
@@ -685,8 +692,46 @@ export const useDashboardStore = create<DashboardState>()(
   },
 }),
     {
-      name: 'dashboard-settings',
-      partialize: (state) => ({ settings: state.settings }),
+      name: 'dashboard-store',
+      partialize: (state) => ({
+        settings: state.settings,
+        tasks: state.tasks,
+        taskHistory: state.taskHistory,
+        messages: state.messages,
+        projects: state.projects,
+        activeProjectId: state.activeProjectId,
+        events: state.events.slice(0, 50), // Keep last 50 events
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Rehydrate dates from localStorage
+        if (state) {
+          state.tasks = state.tasks.map(t => ({
+            ...t,
+            createdAt: new Date(t.createdAt),
+            updatedAt: new Date(t.updatedAt),
+            completedAt: t.completedAt ? new Date(t.completedAt) : undefined,
+          }))
+          state.taskHistory = state.taskHistory.map(t => ({
+            ...t,
+            createdAt: new Date(t.createdAt),
+            updatedAt: new Date(t.updatedAt),
+            completedAt: t.completedAt ? new Date(t.completedAt) : undefined,
+          }))
+          state.messages = state.messages.map(m => ({
+            ...m,
+            timestamp: new Date(m.timestamp),
+          }))
+          state.projects = state.projects.map(p => ({
+            ...p,
+            createdAt: new Date(p.createdAt),
+            updatedAt: new Date(p.updatedAt),
+          }))
+          state.events = state.events.map(e => ({
+            ...e,
+            timestamp: new Date(e.timestamp),
+          }))
+        }
+      },
     }
   )
 )
