@@ -933,6 +933,8 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
 
         setTimeout(() => {
           setActiveProject(project.id)
+          setCurrentPage('project-detail')
+          setMainViewMode('project')
           onClose()
         }, 2500)
       }
@@ -954,6 +956,8 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
 
       setTimeout(() => {
         setActiveProject(project.id)
+        setCurrentPage('project-detail')
+        setMainViewMode('project')
         onClose()
       }, 2500)
     }
