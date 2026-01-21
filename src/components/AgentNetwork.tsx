@@ -601,122 +601,65 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
       onMouseLeave={viewMode === 'full' ? handleMouseUp : undefined}
       style={{ cursor: viewMode === 'full' ? (isPanning ? 'grabbing' : 'grab') : 'default' }}
     >
-      {/* Top Right Controls - View Mode Toggle + New Task Button */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '24px',
-          right: '40px',
-          zIndex: 50,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          gap: '12px',
-        }}
-      >
-        {/* View Mode Toggle */}
+      {/* Top Right Controls - View Mode Toggle (hidden in tasks view) */}
+      {viewMode !== 'tasks' && (
         <div
           style={{
+            position: 'absolute',
+            top: '24px',
+            right: '40px',
+            zIndex: 50,
             display: 'flex',
-            alignItems: 'center',
-            gap: '2px',
-            backgroundColor: 'var(--bg-surface)',
-            borderRadius: '12px',
-            padding: '5px',
-            border: '1px solid var(--glass-border)',
-            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.25)',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '12px',
           }}
         >
-        {[
-          { mode: 'full' as const, icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', title: 'Agents' },
-          { mode: 'department' as const, icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', title: 'Departments' },
-          { mode: 'all_projects' as const, icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z', title: 'Projects' },
-          { mode: 'tasks' as const, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', title: 'Tasks' },
-        ].map(({ mode, icon, title }) => (
-          <button
-            key={mode}
-            onClick={() => setViewMode(mode)}
+          {/* View Mode Toggle */}
+          <div
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: viewMode === mode ? 'var(--bg-elevated)' : 'transparent',
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: viewMode === mode ? (mode === 'tasks' ? 'var(--accent)' : 'var(--text-main)') : 'var(--text-muted)',
-              transition: 'all 0.15s ease',
-              position: 'relative',
+              gap: '2px',
+              backgroundColor: 'var(--bg-surface)',
+              borderRadius: '12px',
+              padding: '5px',
+              border: '1px solid var(--glass-border)',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.25)',
             }}
-            title={title}
           >
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
-            </svg>
-            {mode === 'tasks' && tasks.length > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '0px',
-                right: '0px',
-                width: '16px',
-                height: '16px',
-                fontSize: '10px',
-                fontWeight: 700,
-                backgroundColor: 'var(--accent)',
-                color: 'var(--bg)',
-                borderRadius: '50%',
+          {[
+            { mode: 'full' as const, icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', title: 'Agents' },
+            { mode: 'department' as const, icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', title: 'Departments' },
+            { mode: 'all_projects' as const, icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z', title: 'Projects' },
+          ].map(({ mode, icon, title }) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: viewMode === mode ? 'var(--bg-elevated)' : 'transparent',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 6px rgba(255, 107, 53, 0.4)',
-              }}>
-                {tasks.length > 9 ? '9+' : tasks.length}
-              </span>
-            )}
-          </button>
-        ))}
+                color: viewMode === mode ? 'var(--text-main)' : 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+                position: 'relative',
+              }}
+              title={title}
+            >
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+              </svg>
+            </button>
+          ))}
+          </div>
         </div>
-
-        {/* New Task Button - Only visible in tasks view */}
-        {viewMode === 'tasks' && (
-          <button
-            onClick={() => setShowNewTaskForm(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--accent)',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontFamily: 'ui-monospace, monospace',
-              fontWeight: 600,
-              letterSpacing: '0.02em',
-              color: 'var(--bg)',
-              boxShadow: '0 4px 16px rgba(255, 107, 53, 0.35)',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)'
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 107, 53, 0.45)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 4px 16px rgba(255, 107, 53, 0.35)'
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>New Task</span>
-          </button>
-        )}
-      </div>
+      )}
 
       {/* FULL VIEW MODE */}
       <AnimatePresence mode="wait">
@@ -1275,25 +1218,62 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
                 style={{ position: 'relative', zIndex: 10 }}
               >
               {/* Title Row */}
-              <div style={{ marginBottom: '24px' }}>
-                <h1 style={{
-                  fontSize: '28px',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  letterSpacing: '-0.02em',
-                  margin: 0,
-                  lineHeight: 1,
-                }}>
-                  Task Operations
-                </h1>
-                <p style={{
-                  fontSize: '13px',
-                  fontFamily: 'ui-monospace, monospace',
-                  color: 'var(--text-muted)',
-                  margin: '8px 0 0 0',
-                }}>
-                  Manage and track agent tasks
-                </p>
+              <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div>
+                  <h1 style={{
+                    fontSize: '28px',
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
+                    letterSpacing: '-0.02em',
+                    margin: 0,
+                    lineHeight: 1,
+                  }}>
+                    Task Operations
+                  </h1>
+                  <p style={{
+                    fontSize: '13px',
+                    fontFamily: 'ui-monospace, monospace',
+                    color: 'var(--text-muted)',
+                    margin: '8px 0 0 0',
+                  }}>
+                    Manage and track agent tasks
+                  </p>
+                </div>
+                {/* New Task Button */}
+                <button
+                  onClick={() => setShowNewTaskForm(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--accent)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontFamily: 'ui-monospace, monospace',
+                    fontWeight: 600,
+                    letterSpacing: '0.02em',
+                    color: 'var(--bg)',
+                    boxShadow: '0 4px 16px rgba(255, 107, 53, 0.35)',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-1px)'
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 107, 53, 0.45)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(255, 107, 53, 0.35)'
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>New Task</span>
+                </button>
               </div>
 
               {/* Stats Row */}
