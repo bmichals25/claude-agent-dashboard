@@ -229,6 +229,11 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
   const [currentDeptIndex, setCurrentDeptIndex] = useState(0)
 
+  // Sync viewMode when initialView prop changes (e.g., navigating between pages)
+  useEffect(() => {
+    setViewModeState(initialView)
+  }, [initialView])
+
   // Handle view mode change with URL update
   const setViewMode = useCallback((mode: AgentViewMode) => {
     setViewModeState(mode)
