@@ -166,8 +166,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-fade">
-      <div style={{ maxWidth: '720px', margin: '0 auto', padding: '48px 56px 120px' }}>
+    <div className="h-full w-full overflow-y-auto scrollbar-fade">
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '48px 56px 120px' }}>
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -20 }}
@@ -199,7 +199,9 @@ export function SettingsPage() {
           </p>
         </motion.header>
 
-      {/* Branding Section */}
+        {/* Settings Content - constrained width */}
+        <div style={{ maxWidth: '720px' }}>
+        {/* Branding Section */}
       <SettingSection title="Branding">
         <SettingRow label="App Name" description="The name displayed in the header">
           <input
@@ -396,7 +398,8 @@ export function SettingsPage() {
             Reset
           </button>
         </SettingRow>
-      </SettingSection>
+        </SettingSection>
+        </div>
 
         {/* Version info */}
         <div
