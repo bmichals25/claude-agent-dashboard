@@ -1,6 +1,7 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 import { useDashboardStore } from '@/lib/store'
 import { useSoundEffects } from '@/hooks/useSoundEffects'
 
@@ -16,38 +17,16 @@ const ACCENT_COLORS = [
   { name: 'Red', value: '#ef4444' },
 ]
 
-function SettingSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        marginBottom: '32px',
-      }}
-    >
-      <h3
-        style={{
-          fontSize: '11px',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          color: 'var(--text-muted)',
-          marginBottom: '16px',
-        }}
-      >
-        {title}
-      </h3>
-      <div
-        style={{
-          background: 'var(--bg-elevated)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '16px',
-          overflow: 'hidden',
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  )
-}
+// Settings sections
+const SECTIONS = [
+  { id: 'branding', label: 'Branding', icon: '✦' },
+  { id: 'appearance', label: 'Appearance', icon: '◐' },
+  { id: 'notifications', label: 'Notifications', icon: '◉' },
+  { id: 'chat', label: 'Chat', icon: '◈' },
+  { id: 'danger', label: 'Danger Zone', icon: '⚠' },
+] as const
+
+type SectionId = typeof SECTIONS[number]['id']
 
 function SettingRow({
   label,
@@ -66,7 +45,7 @@ function SettingRow({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '16px 20px',
+        padding: '20px 24px',
         borderBottom: isLast ? 'none' : '1px solid var(--glass-border)',
       }}
     >
@@ -147,6 +126,7 @@ function Toggle({
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useDashboardStore()
   const { playToggle, playClick } = useSoundEffects()
+  const [activeSection, setActiveSection] = useState<SectionId>('branding')
 
   const handleNameChange = (value: string) => {
     updateSettings({ appName: value })
@@ -199,214 +179,409 @@ export function SettingsPage() {
           </p>
         </motion.header>
 
-        {/* Settings Content - constrained width */}
-        <div style={{ maxWidth: '720px' }}>
-        {/* Branding Section */}
-      <SettingSection title="Branding">
-        <SettingRow label="App Name" description="The name displayed in the header">
-          <input
-            type="text"
-            value={settings.appName}
-            onChange={(e) => handleNameChange(e.target.value)}
+        {/* Two Column Layout */}
+        <div style={{ display: 'flex', gap: '48px' }}>
+          {/* Left Navigation */}
+          <motion.nav
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
             style={{
-              width: '200px',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              border: '1px solid var(--glass-border)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-main)',
-              fontSize: '13px',
-              outline: 'none',
-              transition: 'border-color 0.2s ease',
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = settings.accentColor
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = 'var(--glass-border)'
-            }}
-          />
-        </SettingRow>
-        <SettingRow label="Tagline" description="Subtitle shown below the name" isLast>
-          <input
-            type="text"
-            value={settings.appTagline}
-            onChange={(e) => handleTaglineChange(e.target.value)}
-            style={{
-              width: '200px',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              border: '1px solid var(--glass-border)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-main)',
-              fontSize: '13px',
-              outline: 'none',
-              transition: 'border-color 0.2s ease',
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = settings.accentColor
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = 'var(--glass-border)'
-            }}
-          />
-        </SettingRow>
-      </SettingSection>
-
-      {/* Appearance Section */}
-      <SettingSection title="Appearance">
-        <SettingRow label="Accent Color" description="Primary color used throughout the app">
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {ACCENT_COLORS.map((color) => (
-              <button
-                key={color.value}
-                onClick={() => handleColorChange(color.value)}
-                title={color.name}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '8px',
-                  background: color.value,
-                  border: settings.accentColor === color.value
-                    ? '2px solid var(--text-main)'
-                    : '2px solid transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  boxShadow: settings.accentColor === color.value
-                    ? `0 0 12px ${color.value}60`
-                    : 'none',
-                }}
-              />
-            ))}
-          </div>
-        </SettingRow>
-        <SettingRow label="Theme" description="Color scheme for the interface" isLast>
-          <select
-            value={settings.theme}
-            onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'system' })}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '8px',
-              border: '1px solid var(--glass-border)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-main)',
-              fontSize: '13px',
-              outline: 'none',
-              cursor: 'pointer',
+              width: '220px',
+              flexShrink: 0,
             }}
           >
-            <option value="dark">Dark</option>
-            <option value="light">Light (Coming Soon)</option>
-            <option value="system">System</option>
-          </select>
-        </SettingRow>
-      </SettingSection>
+            <div
+              style={{
+                position: 'sticky',
+                top: '48px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              {SECTIONS.map((section) => {
+                const isActive = activeSection === section.id
+                const isDanger = section.id === 'danger'
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => {
+                      playClick()
+                      setActiveSection(section.id)
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      background: isActive
+                        ? isDanger ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-elevated)'
+                        : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '14px',
+                        opacity: isActive ? 1 : 0.5,
+                        color: isDanger ? 'var(--error)' : 'var(--text-main)',
+                      }}
+                    >
+                      {section.icon}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: isActive ? 600 : 400,
+                        color: isActive
+                          ? isDanger ? 'var(--error)' : 'var(--text-main)'
+                          : 'var(--text-secondary)',
+                      }}
+                    >
+                      {section.label}
+                    </span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeIndicator"
+                        style={{
+                          marginLeft: 'auto',
+                          width: '4px',
+                          height: '4px',
+                          borderRadius: '2px',
+                          background: isDanger ? 'var(--error)' : settings.accentColor,
+                        }}
+                      />
+                    )}
+                  </button>
+                )
+              })}
 
-      {/* Notifications Section */}
-      <SettingSection title="Notifications">
-        <SettingRow label="Show Notifications" description="Display event notifications at the bottom">
-          <Toggle
-            enabled={settings.showNotifications}
-            onChange={(enabled) => updateSettings({ showNotifications: enabled })}
-            color={settings.accentColor}
-            onToggle={playToggle}
-          />
-        </SettingRow>
-        <SettingRow label="Sound Effects" description="Play sounds for UI interactions">
-          <Toggle
-            enabled={settings.soundEnabled}
-            onChange={(enabled) => updateSettings({ soundEnabled: enabled })}
-            color={settings.accentColor}
-            onToggle={playToggle}
-          />
-        </SettingRow>
-        {settings.soundEnabled && (
-          <SettingRow label="Volume" description="Adjust sound effect volume" isLast>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={settings.soundVolume}
-                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+              {/* Version info */}
+              <div
                 style={{
-                  width: '100px',
-                  accentColor: settings.accentColor,
-                  cursor: 'pointer',
-                }}
-              />
-              <span
-                style={{
-                  fontSize: '12px',
+                  marginTop: '32px',
+                  padding: '16px',
+                  fontSize: '11px',
                   fontFamily: 'ui-monospace, monospace',
-                  color: 'var(--text-secondary)',
-                  minWidth: '36px',
+                  color: 'var(--text-muted)',
                 }}
               >
-                {Math.round(settings.soundVolume * 100)}%
-              </span>
+                v1.0.0
+              </div>
             </div>
-          </SettingRow>
-        )}
-        {!settings.soundEnabled && (
-          <div style={{ height: '1px' }} />
-        )}
-      </SettingSection>
+          </motion.nav>
 
-      {/* Chat Section */}
-      <SettingSection title="Chat">
-        <SettingRow label="Auto-scroll" description="Automatically scroll to new messages" isLast>
-          <Toggle
-            enabled={settings.autoScrollChat}
-            onChange={(enabled) => updateSettings({ autoScrollChat: enabled })}
-            color={settings.accentColor}
-            onToggle={playToggle}
-          />
-        </SettingRow>
-      </SettingSection>
-
-      {/* Danger Zone */}
-      <SettingSection title="Danger Zone">
-        <SettingRow label="Reset Settings" description="Restore all settings to defaults" isLast>
-          <button
-            onClick={() => {
-              if (confirm('Are you sure you want to reset all settings?')) {
-                resetSettings()
-              }
-            }}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              background: 'transparent',
-              color: 'var(--error)',
-              fontSize: '13px',
-              fontWeight: 500,
-              border: '1px solid var(--error)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--error)'
-              e.currentTarget.style.color = 'var(--bg)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.color = 'var(--error)'
-            }}
+          {/* Right Content */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            style={{ flex: 1, maxWidth: '640px' }}
           >
-            Reset
-          </button>
-        </SettingRow>
-        </SettingSection>
-        </div>
+            <AnimatePresence mode="wait">
+              {/* Branding Section */}
+              {activeSection === 'branding' && (
+                <motion.div
+                  key="branding"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '24px' }}>
+                    Branding
+                  </h2>
+                  <div
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <SettingRow label="App Name" description="The name displayed in the header">
+                      <input
+                        type="text"
+                        value={settings.appName}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        style={{
+                          width: '200px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--glass-border)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-main)',
+                          fontSize: '13px',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease',
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = settings.accentColor
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'var(--glass-border)'
+                        }}
+                      />
+                    </SettingRow>
+                    <SettingRow label="Tagline" description="Subtitle shown below the name" isLast>
+                      <input
+                        type="text"
+                        value={settings.appTagline}
+                        onChange={(e) => handleTaglineChange(e.target.value)}
+                        style={{
+                          width: '200px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--glass-border)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-main)',
+                          fontSize: '13px',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease',
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = settings.accentColor
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'var(--glass-border)'
+                        }}
+                      />
+                    </SettingRow>
+                  </div>
+                </motion.div>
+              )}
 
-        {/* Version info */}
-        <div
-          className="text-center py-6 mt-4 text-[11px] font-mono"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          Claude Agent Dashboard v1.0.0
+              {/* Appearance Section */}
+              {activeSection === 'appearance' && (
+                <motion.div
+                  key="appearance"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '24px' }}>
+                    Appearance
+                  </h2>
+                  <div
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <SettingRow label="Accent Color" description="Primary color used throughout the app">
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {ACCENT_COLORS.map((color) => (
+                          <button
+                            key={color.value}
+                            onClick={() => handleColorChange(color.value)}
+                            title={color.name}
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '8px',
+                              background: color.value,
+                              border: settings.accentColor === color.value
+                                ? '2px solid var(--text-main)'
+                                : '2px solid transparent',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              boxShadow: settings.accentColor === color.value
+                                ? `0 0 12px ${color.value}60`
+                                : 'none',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </SettingRow>
+                    <SettingRow label="Theme" description="Color scheme for the interface" isLast>
+                      <select
+                        value={settings.theme}
+                        onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'system' })}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--glass-border)',
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-main)',
+                          fontSize: '13px',
+                          outline: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <option value="dark">Dark</option>
+                        <option value="light">Light (Coming Soon)</option>
+                        <option value="system">System</option>
+                      </select>
+                    </SettingRow>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Notifications Section */}
+              {activeSection === 'notifications' && (
+                <motion.div
+                  key="notifications"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '24px' }}>
+                    Notifications
+                  </h2>
+                  <div
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <SettingRow label="Show Notifications" description="Display event notifications at the bottom">
+                      <Toggle
+                        enabled={settings.showNotifications}
+                        onChange={(enabled) => updateSettings({ showNotifications: enabled })}
+                        color={settings.accentColor}
+                        onToggle={playToggle}
+                      />
+                    </SettingRow>
+                    <SettingRow label="Sound Effects" description="Play sounds for UI interactions">
+                      <Toggle
+                        enabled={settings.soundEnabled}
+                        onChange={(enabled) => updateSettings({ soundEnabled: enabled })}
+                        color={settings.accentColor}
+                        onToggle={playToggle}
+                      />
+                    </SettingRow>
+                    <SettingRow label="Volume" description="Adjust sound effect volume" isLast>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={settings.soundVolume}
+                          onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                          disabled={!settings.soundEnabled}
+                          style={{
+                            width: '100px',
+                            accentColor: settings.accentColor,
+                            cursor: settings.soundEnabled ? 'pointer' : 'not-allowed',
+                            opacity: settings.soundEnabled ? 1 : 0.5,
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            fontFamily: 'ui-monospace, monospace',
+                            color: 'var(--text-secondary)',
+                            minWidth: '36px',
+                            opacity: settings.soundEnabled ? 1 : 0.5,
+                          }}
+                        >
+                          {Math.round(settings.soundVolume * 100)}%
+                        </span>
+                      </div>
+                    </SettingRow>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Chat Section */}
+              {activeSection === 'chat' && (
+                <motion.div
+                  key="chat"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '24px' }}>
+                    Chat
+                  </h2>
+                  <div
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <SettingRow label="Auto-scroll" description="Automatically scroll to new messages" isLast>
+                      <Toggle
+                        enabled={settings.autoScrollChat}
+                        onChange={(enabled) => updateSettings({ autoScrollChat: enabled })}
+                        color={settings.accentColor}
+                        onToggle={playToggle}
+                      />
+                    </SettingRow>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Danger Zone Section */}
+              {activeSection === 'danger' && (
+                <motion.div
+                  key="danger"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--error)', marginBottom: '24px' }}>
+                    Danger Zone
+                  </h2>
+                  <div
+                    style={{
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <SettingRow label="Reset Settings" description="Restore all settings to defaults" isLast>
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to reset all settings?')) {
+                            resetSettings()
+                          }
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          background: 'transparent',
+                          color: 'var(--error)',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          border: '1px solid var(--error)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--error)'
+                          e.currentTarget.style.color = 'var(--bg)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.color = 'var(--error)'
+                        }}
+                      >
+                        Reset All Settings
+                      </button>
+                    </SettingRow>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
       </div>
     </div>
