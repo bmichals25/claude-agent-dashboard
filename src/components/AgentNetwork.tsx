@@ -1177,7 +1177,7 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
         )}
       </AnimatePresence>
 
-      {/* TASKS VIEW MODE - Mission Control Design */}
+      {/* TASKS VIEW MODE - Clean design matching Agent Health */}
       <AnimatePresence mode="wait">
         {viewMode === 'tasks' && (
           <motion.div
@@ -1188,22 +1188,6 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
             transition={{ duration: 0.4 }}
             className="absolute inset-0"
           >
-            {/* Atmospheric Background Grid */}
-            <div
-              className="absolute inset-0 pointer-events-none opacity-[0.03]"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(255, 107, 53, 0.3) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(255, 107, 53, 0.3) 1px, transparent 1px)
-                `,
-                backgroundSize: '60px 60px',
-              }}
-            />
-
-            {/* Gradient Orbs */}
-            <div className="absolute top-20 right-[20%] w-[400px] h-[400px] rounded-full bg-[var(--accent)]/[0.04] blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-20 left-[10%] w-[300px] h-[300px] rounded-full bg-[var(--accent-tertiary)]/[0.03] blur-[100px] pointer-events-none" />
-
             {/* Content Wrapper - matching Agent Health layout */}
             <div className="h-full w-full overflow-auto scrollbar-fade">
               <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '48px 56px 120px' }}>
