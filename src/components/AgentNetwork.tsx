@@ -636,7 +636,6 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
           {[
             { mode: 'full' as const, icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', title: 'Agents' },
             { mode: 'department' as const, icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', title: 'Departments' },
-            { mode: 'all_projects' as const, icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z', title: 'Projects' },
           ].map(({ mode, icon, title }) => (
             <button
               key={mode}
@@ -1205,80 +1204,64 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
             <div className="absolute top-20 right-[20%] w-[400px] h-[400px] rounded-full bg-[var(--accent)]/[0.04] blur-[120px] pointer-events-none" />
             <div className="absolute bottom-20 left-[10%] w-[300px] h-[300px] rounded-full bg-[var(--accent-tertiary)]/[0.03] blur-[100px] pointer-events-none" />
 
-            {/* Content Wrapper with consistent margins */}
-            <div style={{
-              position: 'absolute',
-              top: '100px',
-              left: '40px',
-              right: '40px',
-              bottom: '32px',
-              display: 'flex',
-              flexDirection: 'column',
-            }}>
+            {/* Content Wrapper - matching Agent Health layout */}
+            <div className="h-full w-full overflow-auto scrollbar-fade">
+              <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '48px 56px 120px' }}>
               {/* Header Section */}
               <motion.header
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.5 }}
-                style={{ position: 'relative', zIndex: 10 }}
+                transition={{ duration: 0.5 }}
+                style={{ marginBottom: '48px' }}
               >
               {/* Title Row */}
-              <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px' }}>
                 <div>
                   <h1 style={{
-                    fontSize: '28px',
+                    fontSize: '32px',
                     fontWeight: 700,
                     color: 'var(--text-main)',
                     letterSpacing: '-0.02em',
-                    margin: 0,
-                    lineHeight: 1,
+                    lineHeight: 1.2,
                   }}>
                     Task Operations
                   </h1>
                   <p style={{
-                    fontSize: '13px',
-                    fontFamily: 'ui-monospace, monospace',
-                    color: 'var(--text-muted)',
-                    margin: '8px 0 0 0',
+                    fontSize: '14px',
+                    fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+                    color: 'var(--text-dim)',
+                    marginTop: '6px',
+                    letterSpacing: '0.02em',
                   }}>
-                    Manage and track agent tasks
+                    {tasks.length} tasks · {taskStats.active} active
                   </p>
                 </div>
                 {/* New Task Button */}
-                <button
+                <motion.button
                   onClick={() => setShowNewTaskForm(true)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    padding: '10px 18px',
-                    borderRadius: '10px',
+                    padding: '12px 20px',
+                    borderRadius: '12px',
                     backgroundColor: 'var(--accent)',
                     border: 'none',
                     cursor: 'pointer',
-                    fontSize: '13px',
-                    fontFamily: 'ui-monospace, monospace',
+                    fontSize: '14px',
                     fontWeight: 600,
-                    letterSpacing: '0.02em',
                     color: 'var(--bg)',
                     boxShadow: '0 4px 16px rgba(255, 107, 53, 0.35)',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-1px)'
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 107, 53, 0.45)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(255, 107, 53, 0.35)'
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
                   <span>New Task</span>
-                </button>
+                </motion.button>
               </div>
 
               {/* Stats Row */}
@@ -1286,7 +1269,7 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
                 display: 'flex',
                 alignItems: 'center',
                 gap: '16px',
-                marginBottom: '24px',
+                marginBottom: '32px',
               }}>
                 {[
                   { count: taskStats.active, label: 'active', color: '#ff6b35' },
@@ -2075,6 +2058,7 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
                   )
                 })}
               </div>
+            </div>
             </div>
             </div>
           </motion.div>
