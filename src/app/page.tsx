@@ -14,7 +14,6 @@ import { NavDrawer } from '@/components/NavDrawer'
 import { AgentHealthDashboard } from '@/components/AgentHealthDashboard'
 import { SettingsPage } from '@/components/SettingsPage'
 import { SkillsStore } from '@/components/SkillsStore'
-import { TasksPage } from '@/components/TasksPage'
 import { ProjectDetailView } from '@/components/pipeline/ProjectDetailView'
 import { ProjectsPage } from '@/components/ProjectsPage'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
@@ -708,7 +707,9 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
           )}
           {currentPage === 'agent-health' && <AgentHealthDashboard />}
           {currentPage === 'skills-store' && <SkillsStore />}
-          {currentPage === 'tasks' && <TasksPage />}
+          {currentPage === 'tasks' && (
+            <AgentNetwork initialView="tasks" projectSlug={currentProjectSlug || 'all'} />
+          )}
           {currentPage === 'settings' && <SettingsPage />}
         </section>
       </div>
