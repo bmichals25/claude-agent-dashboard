@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useOnClickOutside } from "usehooks-ts";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
@@ -11,7 +10,7 @@ interface Tab {
   icon: LucideIcon;
   type?: never;
   id?: string;
-  color?: string; // Custom color for this tab's icon
+  color?: string;
 }
 
 interface Separator {
@@ -29,123 +28,123 @@ interface ExpandableTabsProps {
   onChange?: (index: number | null) => void;
 }
 
-const buttonVariants = {
-  initial: {
-    gap: 0,
-    paddingLeft: "0.5rem",
-    paddingRight: "0.5rem",
-  },
-  animate: (isSelected: boolean) => ({
-    gap: isSelected ? ".375rem" : 0,
-    paddingLeft: isSelected ? "0.625rem" : "0.5rem",
-    paddingRight: isSelected ? "0.625rem" : "0.5rem",
-  }),
-};
-
-const spanVariants = {
-  initial: { width: 0, opacity: 0 },
-  animate: { width: "auto", opacity: 1 },
-  exit: { width: 0, opacity: 0 },
-};
-
-const transition = { delay: 0.1, type: "spring" as const, bounce: 0, duration: 0.6 };
-
 export function ExpandableTabs({
   tabs,
   className,
   onChange,
 }: ExpandableTabsProps) {
   const [selected, setSelected] = React.useState<number | null>(null);
-  const outsideClickRef = React.useRef<HTMLDivElement>(null);
-
-  useOnClickOutside(outsideClickRef as React.RefObject<HTMLDivElement>, () => {
-    setSelected(null);
-    onChange?.(null);
-  });
 
   const handleSelect = (index: number) => {
     setSelected(index);
     onChange?.(index);
   };
 
-  // Render a single tab button
+  // Get non-separator tabs for the main row
+  const mainTabs = tabs.filter((tab): tab is Tab => tab.type !== "separator");
+  const separatorIndex = tabs.findIndex(tab => tab.type === "separator");
+
+  const leftTabs = separatorIndex >= 0 ? mainTabs.slice(0, separatorIndex) : mainTabs;
+  const rightTabs = separatorIndex >= 0 ? mainTabs.slice(separatorIndex) : [];
+
   const TabButton = ({ tab, index }: { tab: Tab; index: number }) => {
     const isSelected = selected === index;
     const Icon = tab.icon;
-    // Use custom color if provided, otherwise use accent/dim
-    const iconColor = tab.color || (isSelected ? 'var(--accent)' : 'var(--text-dim)');
-    const textColor = tab.color || 'var(--accent)';
 
     return (
-      <motion.button
-        variants={buttonVariants}
-        initial={false}
-        animate="animate"
-        custom={isSelected}
+      <button
         onClick={() => handleSelect(index)}
-        transition={transition}
-        className={cn(
-          "relative flex items-center rounded-lg py-2.5 text-xs font-medium transition-colors duration-300 flex-shrink-0",
-          isSelected
-            ? "bg-white/[0.06]"
-            : "text-muted-foreground hover:bg-white/[0.03]"
-        )}
+        className="group relative flex items-center justify-center rounded-xl transition-all duration-200"
+        style={{
+          padding: isSelected ? '10px 16px' : '10px 12px',
+          gap: isSelected ? '8px' : '0',
+        }}
       >
-        <Icon
-          size={18}
-          style={{ color: iconColor }}
-          className="flex-shrink-0"
-        />
-        <AnimatePresence initial={false}>
+        {/* Background pill */}
+        {isSelected && (
+          <motion.div
+            layoutId="activeTab"
+            className="absolute inset-0 rounded-xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0.08) 100%)',
+              border: '1px solid rgba(255, 107, 53, 0.2)',
+            }}
+            transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+          />
+        )}
+
+        {/* Hover state - CSS only */}
+        {!isSelected && (
+          <div className="absolute inset-0 rounded-xl bg-white/0 group-hover:bg-white/[0.05] transition-colors duration-150" />
+        )}
+
+        {/* Icon */}
+        <div
+          className="relative z-10 transition-colors duration-150"
+          style={{
+            color: isSelected ? 'var(--accent)' : 'var(--text-dim)',
+          }}
+        >
+          <Icon size={18} strokeWidth={isSelected ? 2 : 1.5} className={!isSelected ? 'group-hover:text-[var(--text-secondary)]' : ''} />
+        </div>
+
+        {/* Label */}
+        <AnimatePresence mode="wait">
           {isSelected && (
             <motion.span
-              variants={spanVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={transition}
-              className="overflow-hidden whitespace-nowrap text-xs"
-              style={{ color: textColor, maxWidth: '70px' }}
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 'auto', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="relative z-10 overflow-hidden whitespace-nowrap text-[12px] font-medium"
+              style={{ color: 'var(--accent)' }}
             >
               {tab.title}
             </motion.span>
           )}
         </AnimatePresence>
-      </motion.button>
+      </button>
     );
   };
 
   return (
     <div
-      ref={outsideClickRef}
       className={cn(
-        "flex items-center justify-center gap-0.5 rounded-2xl border p-2",
+        "flex items-center rounded-2xl p-1.5",
         className
       )}
       style={{
-        background: 'linear-gradient(180deg, rgba(24, 24, 28, 0.95) 0%, rgba(18, 18, 22, 0.98) 100%)',
-        borderColor: 'rgba(255, 255, 255, 0.06)',
-        boxShadow: '0 -4px 24px -8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-        flexWrap: 'nowrap',
-        overflow: 'hidden',
+        background: 'rgba(20, 20, 24, 0.8)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+        boxShadow: '0 4px 24px -4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.02)',
       }}
     >
-      {tabs.map((tab, index) => {
-        if (tab.type === "separator") {
-          return (
-            <div
-              key={`separator-${index}`}
-              className="mx-1 h-5 w-px flex-shrink-0"
-              style={{
-                background: 'linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.1), transparent)'
-              }}
-              aria-hidden="true"
-            />
-          );
-        }
+      {/* Left section */}
+      <div className="flex items-center">
+        {leftTabs.map((tab) => {
+          const originalIndex = tabs.findIndex(t => t === tab);
+          return <TabButton key={tab.title} tab={tab} index={originalIndex} />;
+        })}
+      </div>
 
-        return <TabButton key={tab.title} tab={tab} index={index} />;
-      })}
+      {/* Separator */}
+      {separatorIndex >= 0 && (
+        <div
+          className="mx-2 h-6 w-px flex-shrink-0"
+          style={{
+            background: 'linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.08), transparent)'
+          }}
+        />
+      )}
+
+      {/* Right section */}
+      <div className="flex items-center">
+        {rightTabs.map((tab) => {
+          const originalIndex = tabs.findIndex(t => t === tab);
+          return <TabButton key={tab.title} tab={tab} index={originalIndex} />;
+        })}
+      </div>
     </div>
   );
 }

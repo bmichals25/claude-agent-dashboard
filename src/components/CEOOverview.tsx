@@ -9,7 +9,6 @@ import { ActivityBanner } from './pipeline/ActivityBanner';
 import { NotificationBadge } from './NotificationBadge';
 import { ChatPanel } from './ChatPanel';
 import { ChatInput } from './ChatInput';
-import { SkillsBrowser } from './SkillsBrowser';
 import { AgentDetailPanel } from './AgentDetailPanel';
 import { AlertTriangle, Clock, AlertCircle, Loader2, RefreshCw, Filter } from 'lucide-react';
 
@@ -107,9 +106,6 @@ export function CEOOverview() {
               </span>
             </div>
           </div>
-          {/* Skills Browser */}
-          <div className="divider" />
-          <SkillsBrowser />
         </header>
 
         {/* Chat Container - Panel + Input unified */}

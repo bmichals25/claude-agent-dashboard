@@ -9,7 +9,6 @@ import { ChatInput } from '@/components/ChatInput'
 import { NotificationBar } from '@/components/NotificationBar'
 import { AgentDetailPanel } from '@/components/AgentDetailPanel'
 import { AgentTasksDrawer } from '@/components/AgentTasksDrawer'
-import { SkillsBrowser } from '@/components/SkillsBrowser'
 import { NavDrawer } from '@/components/NavDrawer'
 import { AgentHealthDashboard } from '@/components/AgentHealthDashboard'
 import { SettingsPage } from '@/components/SettingsPage'
@@ -76,15 +75,16 @@ function SidebarProjectItem({
       style={{
         width: '100%',
         textAlign: 'left',
-        padding: '8px 10px',
-        borderRadius: '8px',
+        padding: '10px 12px',
+        borderRadius: '10px',
         border: 'none',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '12px',
         backgroundColor: isSelected ? 'rgba(var(--accent-rgb), 0.08)' : 'transparent',
         position: 'relative',
+        marginBottom: '2px',
       }}
     >
       {isSelected && (
@@ -94,17 +94,17 @@ function SidebarProjectItem({
             left: 0,
             top: '20%',
             bottom: '20%',
-            width: '2px',
+            width: '3px',
             backgroundColor: 'var(--accent)',
-            borderRadius: '0 2px 2px 0',
+            borderRadius: '0 3px 3px 0',
           }}
         />
       )}
       <div
         style={{
-          width: '24px',
-          height: '24px',
-          borderRadius: '6px',
+          width: '28px',
+          height: '28px',
+          borderRadius: '8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -114,21 +114,21 @@ function SidebarProjectItem({
         }}
       >
         {isAllProjects ? (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--text-secondary)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--text-secondary)' }}>
             <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
             <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
             <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
             <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
           </svg>
         ) : (
-          <span style={{ fontSize: '11px', fontWeight: 600, color: color!, fontFamily: 'var(--font-mono, ui-monospace, monospace)' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: color!, fontFamily: 'var(--font-mono, ui-monospace, monospace)' }}>
             {project.title.charAt(0).toUpperCase()}
           </span>
         )}
       </div>
       <span
         style={{
-          fontSize: '12px',
+          fontSize: '13px',
           fontWeight: isSelected ? 500 : 400,
           color: isSelected ? 'var(--text-main)' : 'var(--text-secondary)',
           whiteSpace: 'nowrap',
@@ -139,6 +139,11 @@ function SidebarProjectItem({
       >
         {isAllProjects ? 'All Projects' : project.title}
       </span>
+      {isSelected && (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
     </motion.button>
   )
 }
@@ -187,36 +192,36 @@ function SidebarProjectDropdown({
           backgroundColor: 'rgba(18, 18, 20, 0.95)',
           backdropFilter: 'blur(16px) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '12px',
+          borderRadius: '14px',
           boxShadow: '0 12px 40px -8px rgba(0, 0, 0, 0.5)',
-          maxHeight: '320px',
+          maxHeight: '380px',
           overflowY: 'auto',
-          padding: '6px',
+          padding: '8px',
         }}
       >
         {/* New Product CTA */}
         <motion.button
           onClick={() => { onOpenNewProject(); onClose() }}
-          whileHover={{ backgroundColor: 'rgba(255, 107, 53, 0.1)' }}
+          whileHover={{ backgroundColor: 'rgba(255, 107, 53, 0.12)' }}
           style={{
             width: '100%',
             textAlign: 'left',
-            padding: '10px',
-            borderRadius: '8px',
-            border: '1px dashed rgba(255, 107, 53, 0.25)',
-            backgroundColor: 'rgba(255, 107, 53, 0.05)',
+            padding: '12px 14px',
+            borderRadius: '10px',
+            border: '1px dashed rgba(255, 107, 53, 0.3)',
+            backgroundColor: 'rgba(255, 107, 53, 0.06)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            marginBottom: '4px',
+            gap: '12px',
+            marginBottom: '8px',
           }}
         >
           <div
             style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '6px',
+              width: '28px',
+              height: '28px',
+              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -224,12 +229,17 @@ function SidebarProjectDropdown({
               border: '1px solid rgba(255, 107, 53, 0.25)',
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--accent)' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--accent)' }}>
               <path d="M12 5v14m-7-7h14" />
             </svg>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--accent)' }}>New Product</span>
+          <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--accent)' }}>New Product</span>
         </motion.button>
+
+        {/* Section label */}
+        <div style={{ padding: '8px 12px 6px', fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          Projects
+        </div>
 
         <SidebarProjectItem
           project={null}
@@ -237,7 +247,7 @@ function SidebarProjectDropdown({
           onSelect={() => { onSelectProject(null); onClose() }}
         />
         {pipelineProjects.length > 0 && (
-          <div style={{ height: '1px', margin: '4px 8px', background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent)' }} />
+          <div style={{ height: '1px', margin: '6px 12px', background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent)' }} />
         )}
         {pipelineProjects.map((project) => (
           <SidebarProjectItem
@@ -471,11 +481,6 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
               </div>
             </div>
 
-            {/* Divider */}
-            <div className="divider" />
-
-            {/* Skills Browser */}
-            <SkillsBrowser />
           </header>
 
           {/* Project Selector */}
@@ -491,7 +496,8 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
             <button
               ref={projectSelectorRef}
               onClick={handleOpenProjectDropdown}
-              className="w-full text-left hover:bg-white/[0.02] transition-all duration-200 group px-5 py-4"
+              className="w-full text-left hover:bg-white/[0.02] transition-all duration-200 group pl-4 py-4"
+              style={{ paddingRight: '24px' }}
             >
                 {selectedProject ? (
                   <div className="flex items-center gap-4">
@@ -605,22 +611,7 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
             )}
           </AnimatePresence>
 
-          {/* Chat Container - Panel + Input unified */}
-          <div className="flex-1 min-h-0 flex flex-col reveal-2 relative">
-            {/* Chat Panel */}
-            <div className="flex-1 min-h-0">
-              <ChatPanel />
-            </div>
-            {/* Chat Input - directly attached */}
-            <div className="mt-0">
-              <ChatInput />
-            </div>
-            {/* Agent Detail Panel - extends to the right of chat */}
-            <AgentDetailPanel />
-            <AgentTasksDrawer />
-          </div>
-
-          {/* Sidebar Footer - Navigation */}
+          {/* Navigation */}
           {(() => {
             const navTabs = [
               { title: 'Home', icon: Home, id: 'home' },
@@ -637,7 +628,7 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
               <ExpandableTabs
                 tabs={navTabs}
                 activeColor="text-[var(--accent)]"
-                className="flex-shrink-0"
+                className="flex-shrink-0 mt-3"
                 onChange={(index) => {
                   if (index === null) return
                   const slug = currentProjectSlug || 'all'
@@ -682,6 +673,21 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
               />
             )
           })()}
+
+          {/* Chat Container - Panel + Input unified */}
+          <div className="flex-1 min-h-0 flex flex-col reveal-2 relative">
+            {/* Chat Panel */}
+            <div className="flex-1 min-h-0">
+              <ChatPanel />
+            </div>
+            {/* Chat Input - directly attached */}
+            <div className="mt-0">
+              <ChatInput />
+            </div>
+            {/* Agent Detail Panel - extends to the right of chat */}
+            <AgentDetailPanel />
+            <AgentTasksDrawer />
+          </div>
         </aside>
 
         {/* Notification Bar */}
