@@ -1249,48 +1249,78 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                 maxWidth: '700px',
               }}
             >
-              {/* Question progress indicator */}
-              <div style={{
-                display: 'flex',
-                gap: '8px',
-                marginBottom: '40px',
-              }}>
-                {BRIEFING_QUESTIONS.map((_, i) => (
-                  <div
-                    key={i}
+              {/* Show loading state for multiple choice questions while fetching options */}
+              {currentBriefingQuestion.isMultipleChoice && isLoadingOptions ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '24px',
+                  padding: '60px 40px',
+                }}>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     style={{
-                      width: i === briefingQuestionIndex ? '24px' : '8px',
-                      height: '8px',
-                      borderRadius: '4px',
-                      backgroundColor: i <= briefingQuestionIndex ? color : 'rgba(255, 255, 255, 0.1)',
-                      transition: 'all 0.3s ease',
+                      width: '48px',
+                      height: '48px',
+                      border: `3px solid rgba(255, 255, 255, 0.1)`,
+                      borderTopColor: color,
+                      borderRadius: '50%',
                     }}
                   />
-                ))}
-              </div>
+                  <p style={{
+                    fontSize: '16px',
+                    color: 'var(--text-dim)',
+                    fontFamily: 'var(--font-mono, ui-monospace, monospace)',
+                  }}>
+                    Generating questions for your project...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Question progress indicator */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '40px',
+                  }}>
+                    {BRIEFING_QUESTIONS.map((_, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          width: i === briefingQuestionIndex ? '24px' : '8px',
+                          height: '8px',
+                          borderRadius: '4px',
+                          backgroundColor: i <= briefingQuestionIndex ? color : 'rgba(255, 255, 255, 0.1)',
+                          transition: 'all 0.3s ease',
+                        }}
+                      />
+                    ))}
+                  </div>
 
-              <h1 style={{
-                fontSize: '36px',
-                fontWeight: 600,
-                color: 'var(--text-main)',
-                marginBottom: '12px',
-                textAlign: 'center',
-                lineHeight: 1.3,
-              }}>
-                {currentBriefingQuestion.question}
-              </h1>
+                  <h1 style={{
+                    fontSize: '36px',
+                    fontWeight: 600,
+                    color: 'var(--text-main)',
+                    marginBottom: '12px',
+                    textAlign: 'center',
+                    lineHeight: 1.3,
+                  }}>
+                    {currentBriefingQuestion.question}
+                  </h1>
 
-              {currentBriefingQuestion.hint && (
-                <p style={{
-                  fontSize: '15px',
-                  color: 'var(--text-dim)',
-                  marginBottom: '40px',
-                  textAlign: 'center',
-                  fontFamily: 'var(--font-mono, ui-monospace, monospace)',
-                }}>
-                  {currentBriefingQuestion.hint}
-                </p>
-              )}
+                  {currentBriefingQuestion.hint && (
+                    <p style={{
+                      fontSize: '15px',
+                      color: 'var(--text-dim)',
+                      marginBottom: '40px',
+                      textAlign: 'center',
+                      fontFamily: 'var(--font-mono, ui-monospace, monospace)',
+                    }}>
+                      {currentBriefingQuestion.hint}
+                    </p>
+                  )}
 
               {/* First question: Text input */}
               {!currentBriefingQuestion.isMultipleChoice && (
@@ -1521,6 +1551,8 @@ export function NewProjectWizard({ onClose }: NewProjectWizardProps) {
                       </button>
                     </div>
                   )}
+                </>
+              )}
                 </>
               )}
             </motion.div>

@@ -60,7 +60,7 @@ For keyFeature: What's the most important feature? Focus on core functionality.
 For successCriteria: How would you measure success? Include metrics where possible.`
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 1024,
       messages: [
         {
@@ -82,6 +82,10 @@ For successCriteria: How would you measure success? Include metrics where possib
     return NextResponse.json(options)
   } catch (error) {
     console.error('Briefing options API error:', error)
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
 
     // Return fallback options if AI fails
     const fallbackOptions: GeneratedOptions = {
