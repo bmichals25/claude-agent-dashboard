@@ -123,3 +123,6 @@ export interface TaskFilters {
   status?: TaskStatus | null
   priority?: TaskPriority | null
 }
+
+// Alias for backward compatibility
+export type ChatMessage = Message
