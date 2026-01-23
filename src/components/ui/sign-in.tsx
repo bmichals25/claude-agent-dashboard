@@ -175,7 +175,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
               </div>
             )}
 
-            <form className="space-y-4" onSubmit={onSignIn}>
+            <form className="space-y-5" onSubmit={onSignIn}>
               <div className="animate-element animate-delay-450">
                 <label className="text-sm font-medium text-[var(--text-dim)] mb-2 block">Email</label>
                 <GlassInputWrapper>
@@ -204,7 +204,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-3 flex items-center"
+                      className="absolute inset-y-0 right-4 flex items-center"
                     >
                       {showPassword ? (
                         <EyeOff className="w-5 h-5 text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors" />
