@@ -1,135 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exec } from 'child_process'
-import { promisify } from 'util'
-import path from 'path'
-import fs from 'fs'
 
-const execAsync = promisify(exec)
+// This endpoint is DISABLED for production/Netlify deployment
+// It requires local filesystem access which is not available in serverless environments
 
-// Base paths for Claude Code resources
-const CLAUDE_BASE = '/Users/benmichals/ClaudeCodeTest/.claude'
-const AGENTS_DIR = path.join(CLAUDE_BASE, 'agents')
-const COMMANDS_DIR = path.join(CLAUDE_BASE, 'commands')
-const SKILLS_DIR = path.join(CLAUDE_BASE, 'skills') // Legacy, may not exist
-
-// Map agent IDs to their .md file names
-const AGENT_FILE_MAP: Record<string, string> = {
-  ceo: 'ceo.md', // CEO doesn't have a separate file, but we can create one
-  chief_of_staff: 'chief-of-staff.md',
-  pipeline_manager: 'pipeline-manager.md',
-  vp_engineering: 'vp-engineering.md',
-  vp_product: 'vp-product.md',
-  vp_design_qa: 'vp-design.md',
-  support_agent: 'support-agent.md',
-  autopilot_agent: 'autopilot-agent.md',
-  architect: 'architect.md',
-  developer: 'developer.md',
-  devops_engineer: 'devops-engineer.md',
-  code_reviewer: 'code-reviewer.md',
-  security_engineer: 'security-engineer.md',
-  product_researcher: 'product-researcher.md',
-  product_manager: 'product-manager.md',
-  data_engineer: 'data-engineer.md',
-  growth_marketer: 'growth-marketer.md',
-  frontend_designer: 'frontend-designer.md',
-  user_testing: 'user-testing.md',
-  technical_writer: 'technical-writer.md',
-}
+const IS_PRODUCTION = process.env.NODE_ENV === 'production' ||
+  process.env.NETLIFY === 'true' ||
+  process.env.VERCEL === '1'
 
 export async function POST(request: NextRequest) {
+  if (IS_PRODUCTION) {
+    return NextResponse.json(
+      {
+        error: 'This feature is not available in production',
+        message: 'Opening local files requires running the dashboard locally',
+      },
+      { status: 503 }
+    )
+  }
+
+  // Local development fallback - attempt to open file
+  // This will only work when running locally with npm run dev
   try {
     const { type, id } = await request.json()
 
-    let filePath: string
-
-    if (type === 'agent') {
-      const fileName = AGENT_FILE_MAP[id]
-      if (!fileName) {
-        return NextResponse.json(
-          { error: `Unknown agent: ${id}` },
-          { status: 404 }
-        )
-      }
-      filePath = path.join(AGENTS_DIR, fileName)
-    } else if (type === 'skill' || type === 'command') {
-      // Skills/commands are stored as .md files in the commands directory
-      filePath = path.join(COMMANDS_DIR, `${id}.md`)
-    } else if (type === 'file') {
-      // Direct file path (must be within CLAUDE_BASE for security)
-      filePath = id
-      if (!filePath.startsWith(CLAUDE_BASE)) {
-        return NextResponse.json(
-          { error: 'Access denied: file outside Claude directory' },
-          { status: 403 }
-        )
-      }
-    } else {
-      return NextResponse.json(
-        { error: `Unknown type: ${type}` },
-        { status: 400 }
-      )
-    }
-
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      return NextResponse.json(
-        { error: `File not found: ${filePath}` },
-        { status: 404 }
-      )
-    }
-
-    // Open in default editor (macOS)
-    await execAsync(`open "${filePath}"`)
-
+    // In local dev, we can still try to provide a helpful message
     return NextResponse.json({
-      success: true,
-      filePath,
-      message: `Opened ${filePath}`,
-    })
+      error: 'File operations disabled',
+      message: `Cannot open ${type}/${id} - this feature is disabled. Agent configs are now stored in Supabase.`,
+      hint: 'Use the Agent Config editor in the dashboard instead.',
+    }, { status: 503 })
   } catch (error) {
     console.error('Open file error:', error)
     return NextResponse.json(
-      { error: 'Failed to open file' },
+      { error: 'Failed to process request' },
       { status: 500 }
     )
   }
 }
 
-// GET endpoint to list available files
+// GET endpoint - return empty list in production
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') || 'all'
-
-  try {
-    const result: { agents?: string[]; commands?: string[]; skills?: string[] } = {}
-
-    if (type === 'all' || type === 'agents') {
-      if (fs.existsSync(AGENTS_DIR)) {
-        result.agents = fs.readdirSync(AGENTS_DIR)
-          .filter(f => f.endsWith('.md'))
-          .map(f => f.replace('.md', ''))
-      }
-    }
-
-    if (type === 'all' || type === 'commands' || type === 'skills') {
-      if (fs.existsSync(COMMANDS_DIR)) {
-        const commands = fs.readdirSync(COMMANDS_DIR)
-          .filter(f => f.endsWith('.md'))
-          .map(f => f.replace('.md', ''))
-        result.commands = commands
-        result.skills = commands // Alias for backwards compatibility
-      } else {
-        result.commands = []
-        result.skills = []
-      }
-    }
-
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error('List files error:', error)
-    return NextResponse.json(
-      { error: 'Failed to list files' },
-      { status: 500 }
-    )
+  if (IS_PRODUCTION) {
+    return NextResponse.json({
+      agents: [],
+      commands: [],
+      skills: [],
+      message: 'File listing not available in production - use Supabase dashboard',
+    })
   }
+
+  // Return empty list for local development too - configs are now in Supabase
+  return NextResponse.json({
+    agents: [],
+    commands: [],
+    skills: [],
+    message: 'Agent configs are now stored in Supabase database',
+  })
 }

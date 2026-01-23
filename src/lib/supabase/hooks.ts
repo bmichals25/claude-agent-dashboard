@@ -323,3 +323,302 @@ export function useSupabaseSync() {
 export function getSessionId() {
   return currentSessionId
 }
+
+// ============================================
+// Skills CRUD functions (for Netlify deployment)
+// ============================================
+
+export interface SkillData {
+  id?: string
+  skill_id: string
+  skill_name: string
+  content: string
+  github_url?: string | null
+  is_installed?: boolean
+}
+
+export async function loadSkills(): Promise<SkillData[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const { data, error } = await supabase
+    .from('dashboard_skills')
+    .select('*')
+    .eq('is_installed', true)
+    .order('installed_at', { ascending: false })
+
+  if (error) {
+    console.error('Failed to load skills:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function saveSkill(skill: SkillData): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: 'Supabase not configured' }
+  }
+
+  const { error } = await supabase
+    .from('dashboard_skills')
+    .upsert({
+      skill_id: skill.skill_id,
+      skill_name: skill.skill_name,
+      content: skill.content,
+      github_url: skill.github_url || null,
+      is_installed: true,
+    }, {
+      onConflict: 'user_id,skill_id',
+    })
+
+  if (error) {
+    console.error('Failed to save skill:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function deleteSkill(skillId: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: 'Supabase not configured' }
+  }
+
+  const { error } = await supabase
+    .from('dashboard_skills')
+    .update({ is_installed: false })
+    .eq('skill_id', skillId)
+
+  if (error) {
+    console.error('Failed to delete skill:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function getSkillContent(skillId: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null
+
+  const { data, error } = await supabase
+    .from('dashboard_skills')
+    .select('content')
+    .eq('skill_id', skillId)
+    .eq('is_installed', true)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data.content
+}
+
+// ============================================
+// Agent Configs CRUD functions
+// ============================================
+
+export interface AgentConfigData {
+  agent_id: string
+  config_content: string
+}
+
+export async function loadAgentConfig(agentId: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null
+
+  const { data, error } = await supabase
+    .from('dashboard_agent_configs')
+    .select('config_content')
+    .eq('agent_id', agentId)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data.config_content
+}
+
+export async function saveAgentConfig(agentId: string, content: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: 'Supabase not configured' }
+  }
+
+  const { error } = await supabase
+    .from('dashboard_agent_configs')
+    .upsert({
+      agent_id: agentId,
+      config_content: content,
+    }, {
+      onConflict: 'user_id,agent_id',
+    })
+
+  if (error) {
+    console.error('Failed to save agent config:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function loadAllAgentConfigs(): Promise<AgentConfigData[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const { data, error } = await supabase
+    .from('dashboard_agent_configs')
+    .select('agent_id, config_content')
+
+  if (error) {
+    console.error('Failed to load agent configs:', error)
+    return []
+  }
+
+  return data || []
+}
+
+// ============================================
+// Settings CRUD functions
+// ============================================
+
+export interface SettingsData {
+  theme?: string
+  accent_color?: string
+  show_notifications?: boolean
+  auto_scroll_chat?: boolean
+  sound_enabled?: boolean
+  sound_volume?: number
+  app_name?: string
+  app_tagline?: string
+}
+
+export async function loadSettings(sessionId: string): Promise<SettingsData | null> {
+  if (!isSupabaseConfigured()) return null
+
+  const { data, error } = await supabase
+    .from('dashboard_settings')
+    .select('*')
+    .eq('session_id', sessionId)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return {
+    theme: data.theme,
+    accent_color: data.accent_color,
+    show_notifications: data.show_notifications,
+    auto_scroll_chat: data.auto_scroll_chat,
+    sound_enabled: data.sound_enabled,
+    sound_volume: data.sound_volume,
+    app_name: data.app_name,
+    app_tagline: data.app_tagline,
+  }
+}
+
+export async function saveSettings(sessionId: string, settings: SettingsData): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: 'Supabase not configured' }
+  }
+
+  const { error } = await supabase
+    .from('dashboard_settings')
+    .upsert({
+      session_id: sessionId,
+      ...settings,
+    }, {
+      onConflict: 'session_id',
+    })
+
+  if (error) {
+    console.error('Failed to save settings:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+// ============================================
+// Project Appearance CRUD functions
+// ============================================
+
+export interface ProjectAppearanceData {
+  project_id: string
+  logo_url?: string | null
+  background_color?: string | null
+  background_preset?: string | null
+  hero_background_image?: string | null
+  subtitle?: string | null
+  slug?: string | null
+}
+
+export async function loadProjectAppearance(sessionId: string, projectId: string): Promise<ProjectAppearanceData | null> {
+  if (!isSupabaseConfigured()) return null
+
+  const { data, error } = await supabase
+    .from('dashboard_project_appearance')
+    .select('*')
+    .eq('session_id', sessionId)
+    .eq('project_id', projectId)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return {
+    project_id: data.project_id,
+    logo_url: data.logo_url,
+    background_color: data.background_color,
+    background_preset: data.background_preset,
+    hero_background_image: data.hero_background_image,
+    subtitle: data.subtitle,
+    slug: data.slug,
+  }
+}
+
+export async function saveProjectAppearance(sessionId: string, appearance: ProjectAppearanceData): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: 'Supabase not configured' }
+  }
+
+  const { error } = await supabase
+    .from('dashboard_project_appearance')
+    .upsert({
+      session_id: sessionId,
+      ...appearance,
+    }, {
+      onConflict: 'session_id,project_id',
+    })
+
+  if (error) {
+    console.error('Failed to save project appearance:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function loadAllProjectAppearances(sessionId: string): Promise<ProjectAppearanceData[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const { data, error } = await supabase
+    .from('dashboard_project_appearance')
+    .select('*')
+    .eq('session_id', sessionId)
+
+  if (error) {
+    console.error('Failed to load project appearances:', error)
+    return []
+  }
+
+  return data?.map(d => ({
+    project_id: d.project_id,
+    logo_url: d.logo_url,
+    background_color: d.background_color,
+    background_preset: d.background_preset,
+    hero_background_image: d.hero_background_image,
+    subtitle: d.subtitle,
+    slug: d.slug,
+  })) || []
+}

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
@@ -25,18 +24,19 @@ interface ExpandableTabsProps {
   tabs: TabItem[];
   className?: string;
   activeColor?: string;
+  activeIndex?: number | null;
   onChange?: (index: number | null) => void;
 }
 
 export function ExpandableTabs({
   tabs,
   className,
+  activeIndex,
   onChange,
 }: ExpandableTabsProps) {
-  const [selected, setSelected] = React.useState<number | null>(null);
+  const selected = activeIndex ?? null;
 
   const handleSelect = (index: number) => {
-    setSelected(index);
     onChange?.(index);
   };
 
@@ -61,17 +61,14 @@ export function ExpandableTabs({
         }}
       >
         {/* Background pill */}
-        {isSelected && (
-          <motion.div
-            layoutId="activeTab"
-            className="absolute inset-0 rounded-xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0.08) 100%)',
-              border: '1px solid rgba(255, 107, 53, 0.2)',
-            }}
-            transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-          />
-        )}
+        <div
+          className="absolute inset-0 rounded-xl transition-all duration-200"
+          style={{
+            background: isSelected ? 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0.08) 100%)' : 'transparent',
+            border: isSelected ? '1px solid rgba(255, 107, 53, 0.2)' : '1px solid transparent',
+            opacity: isSelected ? 1 : 0,
+          }}
+        />
 
         {/* Hover state - CSS only */}
         {!isSelected && (
@@ -89,20 +86,16 @@ export function ExpandableTabs({
         </div>
 
         {/* Label */}
-        <AnimatePresence mode="wait">
-          {isSelected && (
-            <motion.span
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 'auto', opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="relative z-10 overflow-hidden whitespace-nowrap text-[12px] font-medium"
-              style={{ color: 'var(--accent)' }}
-            >
-              {tab.title}
-            </motion.span>
-          )}
-        </AnimatePresence>
+        <span
+          className="relative z-10 overflow-hidden whitespace-nowrap text-[12px] font-medium transition-all duration-200"
+          style={{
+            color: 'var(--accent)',
+            maxWidth: isSelected ? '80px' : '0px',
+            opacity: isSelected ? 1 : 0,
+          }}
+        >
+          {tab.title}
+        </span>
       </button>
     );
   };

@@ -9,7 +9,6 @@ import { ChatInput } from '@/components/ChatInput'
 import { NotificationBar } from '@/components/NotificationBar'
 import { AgentDetailPanel } from '@/components/AgentDetailPanel'
 import { AgentTasksDrawer } from '@/components/AgentTasksDrawer'
-import { NavDrawer } from '@/components/NavDrawer'
 import { AgentHealthDashboard } from '@/components/AgentHealthDashboard'
 import { SettingsPage } from '@/components/SettingsPage'
 import { SkillsStore } from '@/components/SkillsStore'
@@ -434,11 +433,33 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
     window.dispatchEvent(event)
   }, [])
 
-  return (
-    <main className="h-screen w-screen flex">
-      <NavDrawer />
+  // Get project background settings
+  const projectBackgroundPreset = selectedProject?.backgroundPreset
+  const projectBackgroundColor = selectedProject?.backgroundColor
 
-      <div className="flex w-full h-full" style={{ padding: '16px', gap: '16px' }}>
+  // Check if a custom background is active (preset or solid color)
+  const hasCustomBackground = (projectBackgroundPreset && projectBackgroundPreset !== 'none') || projectBackgroundColor
+
+  // Build background class and style
+  const bgPresetClass = projectBackgroundPreset && projectBackgroundPreset !== 'none'
+    ? `bg-preset bg-${projectBackgroundPreset}`
+    : ''
+
+  return (
+    <main
+      className="h-screen w-screen flex relative"
+      style={{
+        backgroundColor: projectBackgroundColor && (!projectBackgroundPreset || projectBackgroundPreset === 'none')
+          ? projectBackgroundColor
+          : 'var(--bg)',
+      }}
+    >
+      {/* Project Background Preset Layer */}
+      {projectBackgroundPreset && projectBackgroundPreset !== 'none' && (
+        <div className={`absolute inset-0 ${bgPresetClass} z-0`} />
+      )}
+
+      <div className="flex w-full h-full relative z-10" style={{ padding: '16px', gap: '16px' }}>
         {/* Floating Decorative Elements */}
         <div className="fixed top-20 right-[25%] w-80 h-80 rounded-full bg-accent/[0.03] blur-[100px] pointer-events-none" />
         <div className="fixed bottom-32 left-[15%] w-96 h-96 rounded-full bg-accent-tertiary/[0.02] blur-[120px] pointer-events-none" />
@@ -447,19 +468,19 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
         {/* Left Sidebar */}
         <aside className="w-full max-w-[380px] lg:w-[380px] h-full flex flex-col gap-4 px-5 py-5 z-20 flex-shrink-0">
           {/* Brand Header */}
-          <header className="liquid-card reveal-1 flex-shrink-0">
-            <div className="flex items-center gap-4">
-              {/* Nav Toggle */}
-              <button
-                onClick={() => useDashboardStore.getState().setNavDrawerOpen(true)}
-                className="w-11 h-11 rounded-xl bg-[var(--glass)] border border-[var(--glass-border)] flex items-center justify-center hover:border-[var(--glass-border-hover)] hover:bg-[var(--bg-surface)] transition-all flex-shrink-0"
-                aria-label="Open navigation"
-              >
-                <svg className="w-5 h-5 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-
+          <header
+            className={`reveal-1 flex-shrink-0 ${hasCustomBackground ? '' : 'liquid-card'}`}
+            style={hasCustomBackground ? {
+              background: 'rgba(10, 8, 6, 0.6)',
+              backdropFilter: 'blur(40px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 'var(--radius-xl)',
+              padding: 'var(--space-5)',
+              boxShadow: '0 20px 50px -15px rgba(0, 0, 0, 0.5)',
+            } : undefined}
+          >
+            <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
                 <h1 className="heading-md text-accent truncate">
                   {settings.appName}
@@ -487,7 +508,11 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
           <div
             className="rounded-xl flex-shrink-0"
             style={{
-              background: 'linear-gradient(180deg, rgba(28, 28, 32, 0.95) 0%, rgba(20, 20, 24, 0.98) 100%)',
+              background: hasCustomBackground
+                ? 'rgba(10, 8, 6, 0.6)'
+                : 'linear-gradient(180deg, rgba(28, 28, 32, 0.95) 0%, rgba(20, 20, 24, 0.98) 100%)',
+              backdropFilter: hasCustomBackground ? 'blur(40px) saturate(180%)' : undefined,
+              WebkitBackdropFilter: hasCustomBackground ? 'blur(40px) saturate(180%)' : undefined,
               border: '1px solid rgba(255, 255, 255, 0.08)',
               boxShadow: '0 8px 32px -8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
               overflow: 'hidden',
@@ -611,29 +636,43 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
             )}
           </AnimatePresence>
 
-          {/* Navigation */}
+          {/* Primary Navigation (Project-specific) */}
           {(() => {
-            const navTabs = [
+            const primaryNavTabs = [
               { title: 'Home', icon: Home, id: 'home' },
               ...(selectedPipelineProjectId ? [{ title: 'Dashboard', icon: LayoutGrid, id: 'dashboard' }] : []),
               { title: 'Agents', icon: Network, id: 'agents' },
-              { type: 'separator' as const },
               { title: 'Tasks', icon: ClipboardList, id: 'tasks' },
-              { title: 'Health', icon: Activity, id: 'health' },
-              { title: 'Skills', icon: Sparkles, id: 'skills' },
-              { title: 'Settings', icon: Settings, id: 'settings' },
             ]
+
+            // Compute active index for primary nav
+            const getPrimaryActiveIndex = () => {
+              if (currentPage === 'dashboard' && mainViewMode === 'projects') {
+                return primaryNavTabs.findIndex(t => t.id === 'home')
+              }
+              if (currentPage === 'dashboard' && mainViewMode === 'project') {
+                return primaryNavTabs.findIndex(t => t.id === 'dashboard')
+              }
+              if (currentPage === 'dashboard' && mainViewMode === 'agents') {
+                return primaryNavTabs.findIndex(t => t.id === 'agents')
+              }
+              if (currentPage === 'tasks') {
+                return primaryNavTabs.findIndex(t => t.id === 'tasks')
+              }
+              return null
+            }
 
             return (
               <ExpandableTabs
-                tabs={navTabs}
+                tabs={primaryNavTabs}
                 activeColor="text-[var(--accent)]"
+                activeIndex={getPrimaryActiveIndex()}
                 className="flex-shrink-0 mt-3"
                 onChange={(index) => {
                   if (index === null) return
                   const slug = currentProjectSlug || 'all'
-                  const clickedTab = navTabs[index]
-                  if (!clickedTab || clickedTab.type === 'separator') return
+                  const clickedTab = primaryNavTabs[index]
+                  if (!clickedTab) return
 
                   const tabId = clickedTab.id
                   switch (tabId) {
@@ -656,18 +695,6 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
                       setCurrentPage('tasks')
                       window.history.replaceState(null, '', `/${slug}/tasks`)
                       break
-                    case 'health':
-                      setCurrentPage('agent-health')
-                      window.history.replaceState(null, '', `/${slug}/health`)
-                      break
-                    case 'skills':
-                      setCurrentPage('skills-store')
-                      window.history.replaceState(null, '', `/${slug}/skills`)
-                      break
-                    case 'settings':
-                      setCurrentPage('settings')
-                      window.history.replaceState(null, '', `/${slug}/settings`)
-                      break
                   }
                 }}
               />
@@ -688,6 +715,60 @@ export default function Dashboard({ initialPage, initialAgentView, projectSlug }
             <AgentDetailPanel />
             <AgentTasksDrawer />
           </div>
+
+          {/* Global Navigation (System-wide) */}
+          {(() => {
+            const globalNavTabs = [
+              { title: 'Health', icon: Activity, id: 'health' },
+              { title: 'Skills', icon: Sparkles, id: 'skills' },
+              { title: 'Settings', icon: Settings, id: 'settings' },
+            ]
+
+            // Compute active index for global nav
+            const getGlobalActiveIndex = () => {
+              if (currentPage === 'agent-health') {
+                return globalNavTabs.findIndex(t => t.id === 'health')
+              }
+              if (currentPage === 'skills-store') {
+                return globalNavTabs.findIndex(t => t.id === 'skills')
+              }
+              if (currentPage === 'settings') {
+                return globalNavTabs.findIndex(t => t.id === 'settings')
+              }
+              return null
+            }
+
+            return (
+              <ExpandableTabs
+                tabs={globalNavTabs}
+                activeColor="text-[var(--accent)]"
+                activeIndex={getGlobalActiveIndex()}
+                className="flex-shrink-0"
+                onChange={(index) => {
+                  if (index === null) return
+                  const slug = currentProjectSlug || 'all'
+                  const clickedTab = globalNavTabs[index]
+                  if (!clickedTab) return
+
+                  const tabId = clickedTab.id
+                  switch (tabId) {
+                    case 'health':
+                      setCurrentPage('agent-health')
+                      window.history.replaceState(null, '', `/${slug}/health`)
+                      break
+                    case 'skills':
+                      setCurrentPage('skills-store')
+                      window.history.replaceState(null, '', `/${slug}/skills`)
+                      break
+                    case 'settings':
+                      setCurrentPage('settings')
+                      window.history.replaceState(null, '', `/${slug}/settings`)
+                      break
+                  }
+                }}
+              />
+            )
+          })()}
         </aside>
 
         {/* Notification Bar */}

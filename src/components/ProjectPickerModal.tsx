@@ -4,6 +4,7 @@ import { useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useDashboardStore } from '@/lib/store'
 import type { Project, ProjectStats } from '@/lib/types'
+import { Plus, ArrowRight, Sparkles, FolderOpen } from 'lucide-react'
 
 interface ProjectPickerModalProps {
   onClose: () => void
@@ -14,10 +15,12 @@ function ProjectCard({
   project,
   stats,
   onSelect,
+  index,
 }: {
   project: Project
   stats: ProjectStats
   onSelect: () => void
+  index: number
 }) {
   const formatLastActivity = (date: Date | null) => {
     if (!date) return 'No activity'
@@ -36,29 +39,38 @@ function ProjectCard({
   return (
     <motion.button
       onClick={onSelect}
-      className="group relative w-full text-left p-4 rounded-2xl border transition-all"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 + index * 0.05 }}
+      className="group relative w-full text-left"
       style={{
-        backgroundColor: 'var(--bg-elevated)',
-        borderColor: 'var(--glass-border)',
+        padding: '16px',
+        borderRadius: '16px',
+        background: 'rgba(255, 255, 255, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       whileHover={{
-        scale: 1.02,
-        borderColor: project.color,
-        boxShadow: `0 8px 32px ${project.color}20`,
+        background: 'rgba(255, 255, 255, 0.06)',
+        borderColor: `${project.color}40`,
+        y: -2,
       }}
       whileTap={{ scale: 0.98 }}
     >
-      {/* Color indicator */}
+      {/* Hover glow */}
       <div
-        className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
-        style={{ backgroundColor: project.color }}
+        className="absolute inset-0 rounded-[16px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at 50% 0%, ${project.color}15 0%, transparent 70%)`,
+        }}
       />
 
-      <div className="flex items-start gap-3 pt-1">
+      <div className="relative flex items-center gap-3">
+        {/* Project Icon */}
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-semibold flex-shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold flex-shrink-0 transition-transform group-hover:scale-105"
           style={{
-            backgroundColor: `${project.color}20`,
+            background: `linear-gradient(135deg, ${project.color}30 0%, ${project.color}10 100%)`,
             color: project.color,
           }}
         >
@@ -66,90 +78,76 @@ function ProjectCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-[var(--text-main)] truncate">
+          <h3 className="text-sm font-semibold text-[var(--text-main)] truncate group-hover:text-white transition-colors">
             {project.name}
           </h3>
-          {project.description && (
-            <p className="text-xs text-[var(--text-dim)] truncate mt-0.5">
-              {project.description}
-            </p>
-          )}
 
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-xs text-[var(--text-muted)]">
-              {stats.activeTasks > 0 ? (
-                <span style={{ color: 'var(--accent)' }}>
-                  {stats.activeTasks} active
-                </span>
-              ) : (
-                <span style={{ color: 'var(--text-dim)' }}>Idle</span>
-              )}
-            </span>
-            <span className="text-xs text-[var(--text-dim)]">
-              {stats.activeAgents.length} agent{stats.activeAgents.length !== 1 ? 's' : ''}
-            </span>
-            <span className="text-xs text-[var(--text-dim)]">
-              {formatLastActivity(stats.lastActivityAt)}
+          <div className="flex items-center gap-2 mt-1">
+            {stats.activeTasks > 0 ? (
+              <span className="flex items-center gap-1 text-[11px]">
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ backgroundColor: project.color }}
+                />
+                <span style={{ color: project.color }}>{stats.activeTasks} active</span>
+              </span>
+            ) : (
+              <span className="text-[11px] text-[var(--text-dim)]">No active tasks</span>
+            )}
+            <span className="text-[11px] text-[var(--text-muted)]">
+              · {formatLastActivity(stats.lastActivityAt)}
             </span>
           </div>
-
-          {/* Progress bar */}
-          {stats.totalTasks > 0 && (
-            <div className="mt-2">
-              <div className="h-1 bg-[var(--bg-surface)] rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${stats.progressPercent}%`,
-                    backgroundColor: project.color,
-                  }}
-                />
-              </div>
-              <span className="text-[10px] text-[var(--text-dim)] mt-1">
-                {stats.progressPercent}% complete
-              </span>
-            </div>
-          )}
         </div>
+
+        {/* Arrow indicator */}
+        <ArrowRight
+          className="w-4 h-4 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0"
+        />
       </div>
     </motion.button>
   )
 }
 
-function NewProjectCard({ onClick }: { onClick: () => void }) {
+function NewProjectCard({ onClick, index }: { onClick: () => void; index: number }) {
   return (
     <motion.button
       onClick={onClick}
-      className="w-full text-left p-4 rounded-2xl border-2 border-dashed transition-all flex items-center justify-center gap-3"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 + index * 0.05 }}
+      className="group w-full text-left relative"
       style={{
-        borderColor: 'var(--glass-border)',
-        minHeight: '100px',
+        padding: '16px',
+        borderRadius: '16px',
+        background: 'transparent',
+        border: '1px dashed rgba(255, 255, 255, 0.1)',
+        transition: 'all 0.3s ease',
       }}
       whileHover={{
-        scale: 1.02,
         borderColor: 'var(--accent)',
-        backgroundColor: 'rgba(255, 107, 53, 0.05)',
+        background: 'rgba(255, 107, 53, 0.05)',
       }}
       whileTap={{ scale: 0.98 }}
     >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center"
-        style={{
-          backgroundColor: 'var(--glass)',
-          color: 'var(--text-secondary)',
-        }}
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      </div>
-      <div>
-        <h3 className="text-sm font-medium text-[var(--text-secondary)]">
-          New Project
-        </h3>
-        <p className="text-xs text-[var(--text-dim)]">
-          Start a new venture
-        </p>
+      <div className="flex items-center gap-3">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:scale-105"
+          style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+          }}
+        >
+          <Plus className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--accent)] transition-colors" />
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-main)] transition-colors">
+            New Project
+          </h3>
+          <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+            Start something new
+          </p>
+        </div>
       </div>
     </motion.button>
   )
@@ -163,12 +161,19 @@ export function ProjectPickerModal({ onClose, onCreateNew }: ProjectPickerModalP
     getProjectStats,
   } = useDashboardStore()
 
-  // Get active (non-archived) projects sorted by recent activity
+  // Get active (non-archived) projects sorted by recent activity, de-duplicated by name
   const activeProjects = useMemo(() => {
+    const seen = new Set<string>()
     return projects
       .filter(p => p.status !== 'archived')
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      .slice(0, 6) // Show max 6 recent projects
+      .filter(p => {
+        const nameLower = p.name.toLowerCase()
+        if (seen.has(nameLower)) return false
+        seen.add(nameLower)
+        return true
+      })
+      .slice(0, 4) // Show max 4 recent projects for cleaner layout
   }, [projects])
 
   const handleSelectProject = useCallback((projectId: string) => {
@@ -192,15 +197,18 @@ export function ProjectPickerModal({ onClose, onCreateNew }: ProjectPickerModalP
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[9999] flex items-center justify-center"
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        {/* Backdrop */}
+        {/* Backdrop with blur */}
         <motion.div
           className="absolute inset-0"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+          style={{
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(12px)',
+          }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -209,76 +217,146 @@ export function ProjectPickerModal({ onClose, onCreateNew }: ProjectPickerModalP
 
         {/* Modal */}
         <motion.div
-          className="relative w-full max-w-2xl mx-4 rounded-3xl overflow-hidden"
+          className="relative w-full max-w-md overflow-hidden"
           style={{
-            backgroundColor: 'var(--bg-main)',
-            border: '1px solid var(--glass-border)',
-            boxShadow: '0 40px 100px -20px rgba(0, 0, 0, 0.6)',
+            borderRadius: '24px',
+            background: 'linear-gradient(180deg, rgba(30, 30, 35, 0.98) 0%, rgba(20, 20, 24, 0.99) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 48px 100px -24px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05) inset',
           }}
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.9, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          exit={{ opacity: 0, scale: 0.9, y: 30 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 350 }}
         >
+          {/* Top gradient accent */}
+          <div
+            className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 107, 53, 0.12) 0%, transparent 70%)',
+            }}
+          />
+
           {/* Header */}
-          <div className="p-6 pb-4">
-            <h2 className="text-xl font-semibold text-[var(--text-main)]">
+          <div className="relative px-6 pt-6 pb-1">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="flex items-center gap-3 mb-3"
+            >
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(135deg, var(--accent) 0%, #ff8a50 100%)',
+                  boxShadow: '0 4px 12px rgba(255, 107, 53, 0.25)',
+                }}
+              >
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+            </motion.div>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="text-xl font-bold text-white"
+              style={{ letterSpacing: '-0.02em' }}
+            >
               Welcome back, Ben
-            </h2>
-            <p className="text-sm text-[var(--text-secondary)] mt-1">
-              Which project would you like to focus on?
-            </p>
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-sm text-[var(--text-secondary)] mt-1"
+            >
+              Pick up where you left off
+            </motion.p>
           </div>
 
-          {/* Project Grid */}
-          <div className="px-6 pb-6">
+          {/* Project List */}
+          <div className="px-6 py-4">
             {activeProjects.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {activeProjects.map(project => (
+              <div className="space-y-2">
+                {activeProjects.map((project, index) => (
                   <ProjectCard
                     key={project.id}
                     project={project}
                     stats={getProjectStats(project.id)}
                     onSelect={() => handleSelectProject(project.id)}
+                    index={index}
                   />
                 ))}
-                <NewProjectCard onClick={handleCreateNew} />
+                <NewProjectCard onClick={handleCreateNew} index={activeProjects.length} />
               </div>
             ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 rounded-full bg-[var(--glass)] flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-[var(--text-dim)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-center py-8"
+              >
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                  }}
+                >
+                  <FolderOpen className="w-7 h-7 text-[var(--text-dim)]" />
                 </div>
-                <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-2">
+                <h3 className="text-base font-medium text-[var(--text-main)] mb-2">
                   No projects yet
                 </h3>
-                <p className="text-xs text-[var(--text-dim)] mb-4">
-                  Get started by creating your first project
+                <p className="text-sm text-[var(--text-dim)] mb-6">
+                  Create your first project to get started
                 </p>
-                <NewProjectCard onClick={handleCreateNew} />
-              </div>
+                <motion.button
+                  onClick={handleCreateNew}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--accent) 0%, #ff8a50 100%)',
+                    boxShadow: '0 4px 20px rgba(255, 107, 53, 0.35)',
+                  }}
+                  whileHover={{ scale: 1.02, boxShadow: '0 6px 24px rgba(255, 107, 53, 0.45)' }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Project
+                </motion.button>
+              </motion.div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="px-6 pb-6 flex justify-center">
-            <motion.button
-              onClick={handleViewAllProjects}
-              className="px-4 py-2 rounded-lg text-sm transition-all"
-              style={{
-                backgroundColor: 'var(--glass)',
-                color: 'var(--text-secondary)',
-              }}
-              whileHover={{
-                backgroundColor: 'var(--glass-hover)',
-                color: 'var(--text-main)',
-              }}
+          {activeProjects.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="px-6 pb-6"
             >
-              View All Projects
-            </motion.button>
-          </div>
+              <motion.button
+                onClick={handleViewAllProjects}
+                className="w-full py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  color: 'var(--text-secondary)',
+                }}
+                whileHover={{
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'var(--text-main)',
+                }}
+                whileTap={{ scale: 0.98 }}
+              >
+                View All Projects
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+            </motion.div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>

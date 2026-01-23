@@ -47,6 +47,7 @@ function parseProject(page: any): PipelineProject {
     spec: props['Product Spec']?.url || null,
     architecture: props['Architecture Doc']?.url || null,
     design: props['Design Assets']?.url || null,
+    codebase: props['Codebase']?.url || null,
     testReport: props['Test Report']?.url || null,
     securityReport: props['Security Report']?.url || null,
     documentation: props['Documentation']?.url || null,
@@ -180,6 +181,148 @@ export async function POST(request: Request) {
     console.error('Failed to create project:', error);
     return NextResponse.json(
       { error: 'Failed to create project' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const project = await request.json();
+    const { id, title, stage, status, progress, priority, agent, blockers, githubUrl, deployUrl, notes, deliverables } = project;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!NOTION_TOKEN) {
+      return NextResponse.json(
+        { error: 'Notion not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Build properties object for Notion update
+    const properties: Record<string, unknown> = {};
+
+    if (title) {
+      properties.Project = {
+        title: [{ text: { content: title } }]
+      };
+    }
+
+    if (stage) {
+      properties.Stage = {
+        select: { name: stage }
+      };
+    }
+
+    if (status) {
+      properties.Status = {
+        select: { name: status }
+      };
+    }
+
+    if (typeof progress === 'number') {
+      properties.Progress = {
+        number: progress
+      };
+    }
+
+    if (priority) {
+      properties.Priority = {
+        select: { name: priority }
+      };
+    }
+
+    if (agent) {
+      properties['Assigned Agent'] = {
+        select: { name: agent }
+      };
+    }
+
+    if (typeof blockers === 'string') {
+      properties.Blockers = {
+        rich_text: blockers ? [{ text: { content: blockers } }] : []
+      };
+    }
+
+    if (typeof githubUrl === 'string') {
+      properties['GitHub Repo'] = {
+        url: githubUrl || null
+      };
+    }
+
+    if (typeof deployUrl === 'string') {
+      properties['Deploy URL'] = {
+        url: deployUrl || null
+      };
+    }
+
+    if (typeof notes === 'string') {
+      properties.Notes = {
+        rich_text: notes ? [{ text: { content: notes } }] : []
+      };
+    }
+
+    // Update deliverables
+    if (deliverables) {
+      if (typeof deliverables.intake === 'string') {
+        properties['Intake Brief'] = { url: deliverables.intake || null };
+      }
+      if (typeof deliverables.research === 'string') {
+        properties['Research Report'] = { url: deliverables.research || null };
+      }
+      if (typeof deliverables.spec === 'string') {
+        properties['Product Spec'] = { url: deliverables.spec || null };
+      }
+      if (typeof deliverables.architecture === 'string') {
+        properties['Architecture Doc'] = { url: deliverables.architecture || null };
+      }
+      if (typeof deliverables.design === 'string') {
+        properties['Design Assets'] = { url: deliverables.design || null };
+      }
+      if (typeof deliverables.codebase === 'string') {
+        properties['Codebase'] = { url: deliverables.codebase || null };
+      }
+      if (typeof deliverables.testReport === 'string') {
+        properties['Test Report'] = { url: deliverables.testReport || null };
+      }
+      if (typeof deliverables.securityReport === 'string') {
+        properties['Security Report'] = { url: deliverables.securityReport || null };
+      }
+      if (typeof deliverables.documentation === 'string') {
+        properties['Documentation'] = { url: deliverables.documentation || null };
+      }
+    }
+
+    const response = await fetch(`https://api.notion.com/v1/pages/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${NOTION_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28',
+      },
+      body: JSON.stringify({ properties }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Notion API error:', errorData);
+      throw new Error(`Notion API error: ${response.status}`);
+    }
+
+    const page = await response.json();
+    const updatedProject = parseProject(page);
+
+    return NextResponse.json({ project: updatedProject });
+  } catch (error) {
+    console.error('Failed to update project:', error);
+    return NextResponse.json(
+      { error: 'Failed to update project' },
       { status: 500 }
     );
   }

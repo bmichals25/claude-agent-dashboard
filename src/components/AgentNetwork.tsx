@@ -246,12 +246,12 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
   // Project modals state
   const [showProjectPicker, setShowProjectPicker] = useState(false)
 
-  // Show project picker on startup if no project selected and not shown yet
-  useEffect(() => {
-    if (!hasShownProjectPicker && projects.length > 0) {
-      setShowProjectPicker(true)
-    }
-  }, [hasShownProjectPicker, projects.length])
+  // Project picker disabled - user preference
+  // useEffect(() => {
+  //   if (!hasShownProjectPicker && projects.length > 0) {
+  //     setShowProjectPicker(true)
+  //   }
+  // }, [hasShownProjectPicker, projects.length])
 
   // New task form state
   const [showNewTaskForm, setShowNewTaskForm] = useState(false)
@@ -674,7 +674,7 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0"
+            className="absolute inset-0 z-10"
           >
             {/* Transformable canvas layer */}
             <div
@@ -736,7 +736,7 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0"
+            className="absolute inset-0 z-10"
           >
             {/* Full canvas for agents - CEO top-left, VP center, members below */}
             <div className="absolute inset-0">
@@ -876,7 +876,7 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0"
+            className="absolute inset-0 z-10"
           >
             {/* Background */}
             <div
@@ -1186,7 +1186,7 @@ export function AgentNetwork({ initialView = 'full', projectSlug }: AgentNetwork
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="absolute inset-0"
+            className="absolute inset-0 z-10"
           >
             {/* Content Wrapper - matching Agent Health layout */}
             <div className="h-full w-full overflow-auto scrollbar-fade">

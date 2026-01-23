@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState, createContext, useContext, ReactNode, useCallback } from 'react'
+import { useEffect, useState, createContext, useContext, ReactNode } from 'react'
 import { useSupabaseSync } from '@/lib/supabase/hooks'
-import { useStore } from '@/lib/store'
 import type { Message, Task, Project, AgentEvent, StreamEntry } from '@/lib/types'
 
 interface SupabaseContextType {
@@ -39,7 +38,7 @@ export function SupabaseProvider({ children }: SupabaseProviderProps) {
   // Load accent color from localStorage for loading screen
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('dashboard-settings')
+      const stored = localStorage.getItem('dashboard-store')
       if (stored) {
         const parsed = JSON.parse(stored)
         if (parsed?.state?.settings?.accentColor) {

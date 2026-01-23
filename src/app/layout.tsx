@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { AuthProvider } from '@/components/providers/AuthProvider'
 import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
 
 export const metadata: Metadata = {
   title: 'Claude Agent Dashboard',
-  description: 'Real-time visualization of Claude Code\'s 18-agent orchestration system',
+  description: 'Real-time visualization of Claude Code\'s 19-agent orchestration system',
 }
 
 export default function RootLayout({
@@ -24,9 +25,11 @@ export default function RootLayout({
       </head>
       <body className="bg-bg text-white font-sans overflow-hidden" suppressHydrationWarning>
         <div className="glass-background" />
-        <SupabaseProvider>
-          {children}
-        </SupabaseProvider>
+        <AuthProvider>
+          <SupabaseProvider>
+            {children}
+          </SupabaseProvider>
+        </AuthProvider>
       </body>
     </html>
   )

@@ -689,6 +689,20 @@ body::after {
   animation: stage-pulse 2s ease-in-out infinite;
 }
 
+/* Stage activation animation for pipeline kick-off */
+@keyframes stage-activate {
+  0%, 100% {
+    box-shadow: 0 8px 24px -4px rgba(255, 107, 53, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(255, 107, 53, 0.2), 0 8px 24px -4px rgba(255, 107, 53, 0.35);
+  }
+}
+
+.stage-activating {
+  animation: stage-activate 1.5s ease-in-out infinite;
+}
+
 /* Pipeline card interaction */
 .pipeline-card {
   transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
@@ -718,3 +732,276 @@ body::after {
   box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
   border-color: rgba(34, 197, 94, 0.4) !important;
 }
+
+/* ========== ANIMATED BACKGROUND PRESETS ========== */
+
+/* Base for all animated backgrounds */
+.bg-preset {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-preset::before,
+.bg-preset::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+}
+
+/* Aurora - Northern lights effect */
+.bg-aurora::before {
+  width: 60%;
+  height: 60%;
+  top: -20%;
+  left: -10%;
+  background: linear-gradient(135deg, #00d4aa 0%, #7c3aed 50%, #0ea5e9 100%);
+  animation: aurora-drift 60s ease-in-out infinite;
+}
+
+.bg-aurora::after {
+  width: 50%;
+  height: 50%;
+  bottom: -15%;
+  right: -10%;
+  background: linear-gradient(225deg, #06b6d4 0%, #8b5cf6 50%, #10b981 100%);
+  animation: aurora-drift 75s ease-in-out infinite reverse;
+}
+
+@keyframes aurora-drift {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 0.4;
+  }
+  25% {
+    transform: translate(10%, 5%) rotate(5deg) scale(1.1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(5%, 10%) rotate(-3deg) scale(0.95);
+    opacity: 0.45;
+  }
+  75% {
+    transform: translate(-5%, 5%) rotate(3deg) scale(1.05);
+    opacity: 0.5;
+  }
+}
+
+/* Nebula - Deep space purple/pink */
+.bg-nebula::before {
+  width: 70%;
+  height: 70%;
+  top: -25%;
+  right: -20%;
+  background: radial-gradient(ellipse, #a855f7 0%, #6366f1 40%, #1e1b4b 100%);
+  animation: nebula-pulse 55s ease-in-out infinite;
+}
+
+.bg-nebula::after {
+  width: 55%;
+  height: 55%;
+  bottom: -20%;
+  left: -15%;
+  background: radial-gradient(ellipse, #ec4899 0%, #8b5cf6 50%, #1e1b4b 100%);
+  animation: nebula-pulse 70s ease-in-out infinite reverse;
+}
+
+@keyframes nebula-pulse {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.35;
+  }
+  33% {
+    transform: scale(1.15) translate(3%, -3%);
+    opacity: 0.45;
+  }
+  66% {
+    transform: scale(0.9) translate(-3%, 3%);
+    opacity: 0.4;
+  }
+}
+
+/* Ember - Warm fire/lava tones */
+.bg-ember::before {
+  width: 65%;
+  height: 65%;
+  bottom: -30%;
+  left: -20%;
+  background: radial-gradient(ellipse, #ff6b35 0%, #dc2626 40%, #7c2d12 100%);
+  animation: ember-glow 45s ease-in-out infinite;
+}
+
+.bg-ember::after {
+  width: 50%;
+  height: 50%;
+  top: -15%;
+  right: -15%;
+  background: radial-gradient(ellipse, #fbbf24 0%, #f97316 50%, #7c2d12 100%);
+  animation: ember-glow 60s ease-in-out infinite reverse;
+}
+
+@keyframes ember-glow {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.3;
+    filter: blur(80px);
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg);
+    opacity: 0.45;
+    filter: blur(100px);
+  }
+}
+
+/* Ocean - Deep blue/teal */
+.bg-ocean::before {
+  width: 60%;
+  height: 70%;
+  top: -30%;
+  left: -15%;
+  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 40%, #0c4a6e 100%);
+  animation: ocean-wave 70s ease-in-out infinite;
+}
+
+.bg-ocean::after {
+  width: 55%;
+  height: 60%;
+  bottom: -25%;
+  right: -20%;
+  background: linear-gradient(0deg, #14b8a6 0%, #0891b2 50%, #0c4a6e 100%);
+  animation: ocean-wave 90s ease-in-out infinite reverse;
+}
+
+@keyframes ocean-wave {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.35;
+  }
+  25% {
+    transform: translateY(-5%) scale(1.05);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(3%) scale(0.95);
+    opacity: 0.35;
+  }
+  75% {
+    transform: translateY(-3%) scale(1.02);
+    opacity: 0.38;
+  }
+}
+
+/* Midnight - Dark subtle blue/purple */
+.bg-midnight::before {
+  width: 80%;
+  height: 80%;
+  top: -40%;
+  right: -30%;
+  background: radial-gradient(ellipse, #3730a3 0%, #1e1b4b 50%, #0f0d1a 100%);
+  animation: midnight-shift 80s ease-in-out infinite;
+}
+
+.bg-midnight::after {
+  width: 60%;
+  height: 60%;
+  bottom: -30%;
+  left: -20%;
+  background: radial-gradient(ellipse, #4338ca 0%, #312e81 50%, #0f0d1a 100%);
+  animation: midnight-shift 100s ease-in-out infinite reverse;
+}
+
+@keyframes midnight-shift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(5%, 5%) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+/* ========== SIGN-IN PAGE ANIMATIONS ========== */
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px);
+  }
+}
+
+@keyframes slideRightIn {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateX(0px);
+  }
+}
+
+@keyframes testimonialIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px) scale(1);
+  }
+}
+
+/* Animation classes for sign-in form elements */
+.animate-element {
+  opacity: 0;
+  filter: blur(4px);
+  transform: translateY(12px);
+  animation: fadeSlideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.animate-slide-right {
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateX(24px);
+  animation: slideRightIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.animate-testimonial {
+  opacity: 0;
+  filter: blur(4px);
+  transform: translateY(16px) scale(0.95);
+  animation: testimonialIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+/* Animation delays */
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-150 { animation-delay: 0.15s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-250 { animation-delay: 0.25s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-350 { animation-delay: 0.35s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-450 { animation-delay: 0.45s; }
+.animate-delay-500 { animation-delay: 0.5s; }
+.animate-delay-550 { animation-delay: 0.55s; }
+.animate-delay-600 { animation-delay: 0.6s; }
+.animate-delay-700 { animation-delay: 0.7s; }
+.animate-delay-800 { animation-delay: 0.8s; }
+.animate-delay-900 { animation-delay: 0.9s; }
+.animate-delay-1000 { animation-delay: 1.0s; }
+.animate-delay-1200 { animation-delay: 1.2s; }
+.animate-delay-1400 { animation-delay: 1.4s; }

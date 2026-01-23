@@ -1,9 +1,11 @@
 'use client';
 
-import { PipelineProject, STAGES } from '@/lib/types';
-import { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { PipelineProject, STAGES, StreamEntry, Task } from '@/lib/types';
 import { StageIcon } from './StageIcon';
 import { motion, AnimatePresence } from 'motion/react';
+import { useDashboardStore } from '@/lib/store';
 import {
   X,
   ExternalLink,
@@ -13,8 +15,15 @@ import {
   Check,
   Circle,
   CircleDot,
-  ArrowRight
+  ArrowRight,
+  Brain,
+  Zap,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Play
 } from 'lucide-react';
+import { initializePipeline } from '@/lib/executionEngine';
 
 interface StageDetailModalProps {
   project: PipelineProject;
@@ -22,11 +31,198 @@ interface StageDetailModalProps {
   onClose: () => void;
 }
 
+// Stream entry component with icons and styling
+function StreamEntryItem({ entry, isLatest }: { entry: StreamEntry; isLatest: boolean }) {
+  const typeConfig = {
+    thought: {
+      icon: <Brain className="w-3.5 h-3.5" />,
+      color: '#a78bfa',
+      bgColor: 'rgba(167, 139, 250, 0.1)',
+      label: 'Thinking',
+    },
+    action: {
+      icon: <Zap className="w-3.5 h-3.5" />,
+      color: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.1)',
+      label: 'Action',
+    },
+    result: {
+      icon: <CheckCircle className="w-3.5 h-3.5" />,
+      color: '#22c55e',
+      bgColor: 'rgba(34, 197, 94, 0.1)',
+      label: 'Result',
+    },
+    error: {
+      icon: <AlertCircle className="w-3.5 h-3.5" />,
+      color: '#ef4444',
+      bgColor: 'rgba(239, 68, 68, 0.1)',
+      label: 'Error',
+    },
+  };
+
+  const config = typeConfig[entry.type];
+  const timestamp = new Date(entry.timestamp).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10, height: 0 }}
+      animate={{ opacity: 1, x: 0, height: 'auto' }}
+      transition={{ duration: 0.2 }}
+      style={{
+        display: 'flex',
+        gap: '12px',
+        padding: '12px 14px',
+        borderRadius: '12px',
+        background: isLatest ? config.bgColor : 'transparent',
+        border: isLatest ? `1px solid ${config.color}20` : '1px solid transparent',
+        marginBottom: '8px',
+      }}
+    >
+      {/* Icon */}
+      <div
+        style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '8px',
+          background: config.bgColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: config.color,
+          flexShrink: 0,
+        }}
+      >
+        {config.icon}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: config.color, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+            {config.label}
+          </span>
+          <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontFamily: 'monospace' }}>
+            {timestamp}
+          </span>
+        </div>
+        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }} className="prose prose-sm prose-invert max-w-none">
+          {entry.type === 'result' ? (
+            <ReactMarkdown>{entry.content}</ReactMarkdown>
+          ) : (
+            <p style={{ margin: 0 }}>{entry.content}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Live indicator for latest */}
+      {isLatest && (
+        <div
+          style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: config.color,
+            animation: 'pulse 1.5s ease-in-out infinite',
+            flexShrink: 0,
+            marginTop: '10px',
+          }}
+        />
+      )}
+    </motion.div>
+  );
+}
+
+// Button to start the pipeline execution
+function StartPipelineButton({ projectId }: { projectId: string }) {
+  const [isStarting, setIsStarting] = useState(false);
+  const { setChatViewMode } = useDashboardStore();
+
+  const handleStart = async () => {
+    setIsStarting(true);
+    setChatViewMode('activity');
+    initializePipeline(projectId);
+    // Keep the button in loading state briefly so user sees feedback
+    setTimeout(() => setIsStarting(false), 1000);
+  };
+
+  return (
+    <motion.button
+      onClick={handleStart}
+      disabled={isStarting}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '12px 24px',
+        borderRadius: '12px',
+        border: 'none',
+        background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%)',
+        color: 'white',
+        fontSize: '13px',
+        fontWeight: 600,
+        cursor: isStarting ? 'not-allowed' : 'pointer',
+        opacity: isStarting ? 0.7 : 1,
+        transition: 'opacity 0.2s ease',
+      }}
+    >
+      {isStarting ? (
+        <>
+          <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
+          Starting...
+        </>
+      ) : (
+        <>
+          <Play style={{ width: '16px', height: '16px' }} />
+          Start Pipeline
+        </>
+      )}
+    </motion.button>
+  );
+}
+
 export function StageDetailModal({ project, stageIndex, onClose }: StageDetailModalProps) {
   const stage = STAGES[stageIndex];
   const isCompleted = stageIndex < project.stageIndex;
   const isCurrent = stageIndex === project.stageIndex;
   const isFuture = stageIndex > project.stageIndex;
+
+  // Get the pipeline execution and current task from store
+  const { getPipelineExecution, tasks } = useDashboardStore();
+  const execution = getPipelineExecution(project.id);
+  const isExecuting = execution?.status === 'running' || execution?.status === 'paused';
+
+  // Find the current task - first try via execution state, then fallback to finding any in-progress task for this project
+  let currentTask = execution?.currentTaskId ? tasks.find(t => t.id === execution.currentTaskId) : null;
+
+  // Fallback: find any in-progress task for this project
+  if (!currentTask && isCurrent) {
+    currentTask = tasks.find(t =>
+      t.projectId === project.id &&
+      (t.status === 'in_progress' || t.status === 'pending')
+    ) || null;
+  }
+
+  // Only show live stream if this is the current stage and there's an active task with stream output
+  const showLiveStream = isCurrent && currentTask && currentTask.streamOutput && currentTask.streamOutput.length > 0;
+
+  // Show the stream section even if empty (to show "waiting" state)
+  const showStreamSection = isCurrent && (currentTask || isExecuting || project.status === 'In Progress');
+
+  // Reference for auto-scroll
+  const streamEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new entries arrive
+  useEffect(() => {
+    if (showLiveStream && streamEndRef.current) {
+      streamEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [currentTask?.streamOutput?.length, showLiveStream]);
 
   // Get the deliverable URL for this stage
   const getDeliverableUrl = (): string | null => {
@@ -260,6 +456,202 @@ export function StageDetailModal({ project, stageIndex, onClose }: StageDetailMo
                 {stage.description}
               </p>
             </motion.div>
+
+            {/* Live Agent Stream - only shows when stage is in progress with active task */}
+            {showLiveStream && currentTask && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                style={{ marginBottom: '24px' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                      Live Agent Activity
+                    </h3>
+                    {execution?.status === 'running' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div
+                          style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: '#22c55e',
+                            animation: 'pulse 1.5s ease-in-out infinite',
+                          }}
+                        />
+                        <span style={{ fontSize: '10px', color: '#22c55e', fontWeight: 500 }}>LIVE</span>
+                      </div>
+                    )}
+                    {execution?.status === 'paused' && (
+                      <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 500 }}>PAUSED</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontFamily: 'monospace' }}>
+                    {currentTask.progress}% complete
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div
+                    style={{
+                      height: '6px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      borderRadius: '3px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <motion.div
+                      style={{
+                        height: '100%',
+                        background: 'linear-gradient(90deg, var(--accent) 0%, var(--accent-secondary) 100%)',
+                        borderRadius: '3px',
+                      }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${currentTask.progress}%` }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                    />
+                  </div>
+                  {currentTask.currentStep && (
+                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                      {currentTask.currentStep}
+                    </p>
+                  )}
+                </div>
+
+                {/* Stream entries */}
+                <div
+                  style={{
+                    maxHeight: '280px',
+                    overflowY: 'auto',
+                    padding: '4px',
+                    borderRadius: '16px',
+                    background: 'rgba(0, 0, 0, 0.2)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                  }}
+                  className="scrollbar-fade"
+                >
+                  <AnimatePresence mode="popLayout">
+                    {currentTask.streamOutput.map((entry, idx) => (
+                      <StreamEntryItem
+                        key={entry.id}
+                        entry={entry}
+                        isLatest={idx === currentTask.streamOutput.length - 1}
+                      />
+                    ))}
+                  </AnimatePresence>
+                  <div ref={streamEndRef} />
+                </div>
+
+                {/* Waiting indicator when stream is empty but task exists */}
+                {currentTask.streamOutput.length === 0 && (
+                  <div
+                    style={{
+                      padding: '24px',
+                      borderRadius: '14px',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid rgba(255, 255, 255, 0.06)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Loader2
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        color: 'var(--accent)',
+                        margin: '0 auto 12px',
+                        animation: 'spin 1s linear infinite',
+                      }}
+                    />
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      Waiting for agent to start...
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* In Progress indicator when current but no task yet - offer to start execution */}
+            {isCurrent && !showLiveStream && (project.status === 'In Progress' || project.status === 'Not Started') && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                style={{ marginBottom: '24px' }}
+              >
+                <h3 style={{ fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px' }}>
+                  Agent Activity
+                </h3>
+                <div
+                  style={{
+                    padding: '20px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(255, 107, 53, 0.02) 100%)',
+                    border: '1px solid rgba(255, 107, 53, 0.15)',
+                  }}
+                >
+                  {isExecuting ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '12px',
+                          background: 'rgba(255, 107, 53, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Loader2
+                          style={{
+                            width: '22px',
+                            height: '22px',
+                            color: 'var(--accent)',
+                            animation: 'spin 1s linear infinite',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-main)', marginBottom: '4px' }}>
+                          Initializing...
+                        </p>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {stage.agent} is starting work on this stage
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center' }}>
+                      <div
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '16px',
+                          background: 'rgba(255, 107, 53, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 16px',
+                        }}
+                      >
+                        <Brain style={{ width: '28px', height: '28px', color: 'var(--accent)' }} />
+                      </div>
+                      <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-main)', marginBottom: '6px' }}>
+                        No active agent execution
+                      </p>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                        Start the pipeline to see {stage.agent}'s live thought process
+                      </p>
+                      <StartPipelineButton projectId={project.id} />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
 
             {/* Deliverable */}
             {stage.deliverableKey && (

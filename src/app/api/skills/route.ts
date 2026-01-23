@@ -1,41 +1,53 @@
 import { NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js'
 
-// The skills directory - using the actual location
-const SKILLS_DIR = '/Users/benmichals/ClaudeCodeTest/.claude/skills'
+// Create a Supabase client for server-side operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Map skill filenames to their IDs for matching with the store
-function normalizeSkillId(filename: string): string {
-  // Remove .md extension and normalize
-  return filename.replace(/\.md$/, '').toLowerCase()
+function getSupabase() {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null
+  }
+  return createClient(supabaseUrl, supabaseServiceKey)
 }
 
 export async function GET() {
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    // Return empty if Supabase not configured
+    return NextResponse.json({
+      installedSkills: [],
+      timestamp: new Date().toISOString(),
+      warning: 'Supabase not configured - running in local mode',
+    })
+  }
+
   try {
-    // Ensure the skills directory exists
-    try {
-      await fs.access(SKILLS_DIR)
-    } catch {
-      // Directory doesn't exist, return empty array
-      return NextResponse.json({ installedSkills: [] })
+    const { data, error } = await supabase
+      .from('dashboard_skills')
+      .select('*')
+      .eq('is_installed', true)
+      .order('installed_at', { ascending: false })
+
+    if (error) {
+      console.error('Failed to fetch skills:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch skills' },
+        { status: 500 }
+      )
     }
 
-    // Read the skills directory
-    const files = await fs.readdir(SKILLS_DIR)
-
-    // Filter for .md files and extract skill IDs
-    const installedSkills = files
-      .filter(file => file.endsWith('.md'))
-      .map(file => ({
-        id: normalizeSkillId(file),
-        filename: file,
-        path: path.join(SKILLS_DIR, file),
-      }))
+    const installedSkills = (data || []).map(skill => ({
+      id: skill.skill_id,
+      skillName: skill.skill_name,
+      githubUrl: skill.github_url,
+      installedAt: skill.installed_at,
+    }))
 
     return NextResponse.json({
       installedSkills,
-      skillsDir: SKILLS_DIR,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
@@ -48,6 +60,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const supabase = getSupabase()
+
   try {
     const body = await request.json()
     const { skillId, skillName, githubUrl } = body
@@ -60,29 +74,22 @@ export async function POST(request: Request) {
     }
 
     // Convert GitHub URL to raw content URL
-    // e.g., https://github.com/anthropics/skills/tree/main/skills/pdf
-    // becomes https://raw.githubusercontent.com/anthropics/skills/main/skills/pdf/SKILL.md
     let rawUrl: string
 
     if (githubUrl.includes('github.com')) {
-      // Handle different GitHub URL formats
       if (githubUrl.includes('/tree/')) {
-        // Format: github.com/owner/repo/tree/branch/path
         rawUrl = githubUrl
           .replace('github.com', 'raw.githubusercontent.com')
           .replace('/tree/', '/')
 
-        // Check if it ends with a skill folder, add SKILL.md
         if (!rawUrl.endsWith('.md')) {
           rawUrl = rawUrl.endsWith('/') ? `${rawUrl}SKILL.md` : `${rawUrl}/SKILL.md`
         }
       } else if (githubUrl.includes('/blob/')) {
-        // Format: github.com/owner/repo/blob/branch/path/file.md
         rawUrl = githubUrl
           .replace('github.com', 'raw.githubusercontent.com')
           .replace('/blob/', '/')
       } else {
-        // Format: github.com/owner/repo - assume main branch and look for SKILL.md
         rawUrl = `https://raw.githubusercontent.com/${githubUrl.replace('https://github.com/', '')}/main/SKILL.md`
       }
     } else {
@@ -90,9 +97,12 @@ export async function POST(request: Request) {
     }
 
     // Fetch the skill content
+    let skillContent: string | null = null
     const response = await fetch(rawUrl)
 
-    if (!response.ok) {
+    if (response.ok) {
+      skillContent = await response.text()
+    } else {
       // Try alternative filename patterns
       const alternativeUrls = [
         rawUrl.replace('SKILL.md', 'README.md'),
@@ -100,7 +110,6 @@ export async function POST(request: Request) {
         rawUrl.replace('/SKILL.md', '.md'),
       ]
 
-      let skillContent: string | null = null
       for (const altUrl of alternativeUrls) {
         const altResponse = await fetch(altUrl)
         if (altResponse.ok) {
@@ -108,50 +117,53 @@ export async function POST(request: Request) {
           break
         }
       }
+    }
 
-      if (!skillContent) {
-        return NextResponse.json(
-          { error: `Could not fetch skill from ${rawUrl}. Tried alternatives but none worked.` },
-          { status: 404 }
-        )
-      }
+    if (!skillContent) {
+      return NextResponse.json(
+        { error: `Could not fetch skill from ${rawUrl}. Tried alternatives but none worked.` },
+        { status: 404 }
+      )
+    }
 
-      // Use the found content
-      const filename = `${skillName || skillId}.md`
-      const filepath = path.join(SKILLS_DIR, filename)
-
-      // Ensure directory exists
-      await fs.mkdir(SKILLS_DIR, { recursive: true })
-
-      // Write the skill file
-      await fs.writeFile(filepath, skillContent, 'utf-8')
-
+    if (!supabase) {
+      // Return success with warning for local development
       return NextResponse.json({
         success: true,
         skillId,
-        filename,
-        path: filepath,
-        message: `Skill "${skillId}" installed successfully`,
+        skillName: skillName || skillId,
+        message: `Skill "${skillId}" fetched successfully (local mode - not persisted)`,
+        warning: 'Supabase not configured - skill not saved to database',
+        content: skillContent.substring(0, 500) + '...', // Preview only
       })
     }
 
-    const skillContent = await response.text()
+    // Save to Supabase
+    const { error } = await supabase
+      .from('dashboard_skills')
+      .upsert({
+        skill_id: skillId,
+        skill_name: skillName || skillId,
+        content: skillContent,
+        github_url: githubUrl,
+        is_installed: true,
+        installed_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,skill_id',
+      })
 
-    // Determine filename
-    const filename = `${skillName || skillId}.md`
-    const filepath = path.join(SKILLS_DIR, filename)
-
-    // Ensure directory exists
-    await fs.mkdir(SKILLS_DIR, { recursive: true })
-
-    // Write the skill file
-    await fs.writeFile(filepath, skillContent, 'utf-8')
+    if (error) {
+      console.error('Failed to save skill:', error)
+      return NextResponse.json(
+        { error: 'Failed to save skill to database' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
       skillId,
-      filename,
-      path: filepath,
+      skillName: skillName || skillId,
       message: `Skill "${skillId}" installed successfully`,
     })
   } catch (error) {
@@ -164,6 +176,15 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Supabase not configured' },
+      { status: 503 }
+    )
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const skillId = searchParams.get('skillId')
@@ -175,22 +196,19 @@ export async function DELETE(request: Request) {
       )
     }
 
-    // Find the skill file
-    const files = await fs.readdir(SKILLS_DIR)
-    const skillFile = files.find(f =>
-      normalizeSkillId(f) === skillId.toLowerCase() ||
-      f.toLowerCase() === `${skillId.toLowerCase()}.md`
-    )
+    // Soft delete - mark as uninstalled
+    const { error } = await supabase
+      .from('dashboard_skills')
+      .update({ is_installed: false })
+      .eq('skill_id', skillId)
 
-    if (!skillFile) {
+    if (error) {
+      console.error('Failed to uninstall skill:', error)
       return NextResponse.json(
-        { error: `Skill "${skillId}" not found` },
-        { status: 404 }
+        { error: 'Failed to uninstall skill' },
+        { status: 500 }
       )
     }
-
-    const filepath = path.join(SKILLS_DIR, skillFile)
-    await fs.unlink(filepath)
 
     return NextResponse.json({
       success: true,
@@ -201,6 +219,55 @@ export async function DELETE(request: Request) {
     console.error('Skills uninstall error:', error)
     return NextResponse.json(
       { error: 'Failed to uninstall skill' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET skill content by ID
+export async function PUT(request: Request) {
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Supabase not configured' },
+      { status: 503 }
+    )
+  }
+
+  try {
+    const body = await request.json()
+    const { skillId } = body
+
+    if (!skillId) {
+      return NextResponse.json(
+        { error: 'Missing skillId' },
+        { status: 400 }
+      )
+    }
+
+    const { data, error } = await supabase
+      .from('dashboard_skills')
+      .select('content')
+      .eq('skill_id', skillId)
+      .eq('is_installed', true)
+      .single()
+
+    if (error || !data) {
+      return NextResponse.json(
+        { error: 'Skill not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      skillId,
+      content: data.content,
+    })
+  } catch (error) {
+    console.error('Skills content error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch skill content' },
       { status: 500 }
     )
   }

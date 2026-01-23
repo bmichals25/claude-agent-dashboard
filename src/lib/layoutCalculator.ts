@@ -30,6 +30,29 @@ const HIERARCHY_ROWS: { tier: AgentTier; agents: AgentId[] }[] = [
   { tier: 'specialist', agents: ['code_reviewer', 'security_engineer', 'data_engineer', 'growth_marketer', 'user_testing'] }, // Bottom specialists
 ]
 
+// Parent-child mapping for positioning children under their parents
+const PARENT_CHILD_MAP: Record<AgentId, AgentId> = {
+  // Chief of Staff's reports
+  support_agent: 'chief_of_staff',
+  // Pipeline Manager's reports
+  autopilot_agent: 'pipeline_manager',
+  // VP Engineering's reports
+  architect: 'vp_engineering',
+  developer: 'vp_engineering',
+  devops_engineer: 'vp_engineering',
+  code_reviewer: 'vp_engineering',
+  security_engineer: 'vp_engineering',
+  // VP Product's reports
+  product_researcher: 'vp_product',
+  product_manager: 'vp_product',
+  data_engineer: 'vp_product',
+  growth_marketer: 'vp_product',
+  // VP Design & QA's reports
+  frontend_designer: 'vp_design_qa',
+  technical_writer: 'vp_design_qa',
+  user_testing: 'vp_design_qa',
+} as Record<AgentId, AgentId>
+
 // Calculate vertical spacing based on viewport aspect ratio
 function calculateVerticalSpacing(config: LayoutConfig): number[] {
   const { viewportHeight, padding } = config
@@ -110,27 +133,61 @@ export function calculateOptimalLayout(config: LayoutConfig): LayoutResult {
   const leftBound = padding.left
   const rightBound = 100 - padding.right
 
-  // Position each row
-  HIERARCHY_ROWS.forEach((row, rowIndex) => {
+  // First pass: position CEO and leadership rows normally
+  HIERARCHY_ROWS.slice(0, 2).forEach((row, rowIndex) => {
     const yPosition = padding.top + rowYPositions[rowIndex]
-
-    // Adjust horizontal bounds for certain rows to create visual hierarchy
-    let rowLeftBound = leftBound
-    let rowRightBound = rightBound
-
-    // Specialists rows can be grouped by department
-    if (rowIndex >= 2) {
-      // Keep specialists more compact per department area
-      rowLeftBound = leftBound + 2
-      rowRightBound = rightBound - 2
-    }
-
-    const xPositions = calculateHorizontalPositions(row.agents, rowLeftBound, rowRightBound)
+    const xPositions = calculateHorizontalPositions(row.agents, leftBound, rightBound)
 
     row.agents.forEach((agentId, agentIndex) => {
       positions[agentId] = {
         x: xPositions[agentIndex],
         y: yPosition,
+      }
+    })
+  })
+
+  // Second pass: position specialist rows based on parent positions
+  HIERARCHY_ROWS.slice(2).forEach((row, rowIndex) => {
+    const actualRowIndex = rowIndex + 2
+    const yPosition = padding.top + rowYPositions[actualRowIndex]
+
+    // Group agents by their parent
+    const agentsByParent: Record<string, AgentId[]> = {}
+    row.agents.forEach(agentId => {
+      const parent = PARENT_CHILD_MAP[agentId] || 'none'
+      if (!agentsByParent[parent]) {
+        agentsByParent[parent] = []
+      }
+      agentsByParent[parent].push(agentId)
+    })
+
+    // Position each agent under or near their parent
+    row.agents.forEach(agentId => {
+      const parentId = PARENT_CHILD_MAP[agentId]
+      if (parentId && positions[parentId]) {
+        const parentPos = positions[parentId]
+        const siblings = agentsByParent[parentId] || [agentId]
+        const siblingIndex = siblings.indexOf(agentId)
+        const siblingCount = siblings.length
+
+        // Spread siblings horizontally around parent's x position
+        const spreadWidth = Math.min(12, 6 * siblingCount) // Max spread per group
+        const offset = siblingCount === 1
+          ? 0
+          : (siblingIndex - (siblingCount - 1) / 2) * (spreadWidth / Math.max(siblingCount - 1, 1))
+
+        positions[agentId] = {
+          x: Math.max(leftBound + 2, Math.min(rightBound - 2, parentPos.x + offset)),
+          y: yPosition,
+        }
+      } else {
+        // Fallback: even distribution for agents without mapped parents
+        const xPositions = calculateHorizontalPositions(row.agents, leftBound + 2, rightBound - 2)
+        const agentIndex = row.agents.indexOf(agentId)
+        positions[agentId] = {
+          x: xPositions[agentIndex],
+          y: yPosition,
+        }
       }
     })
   })

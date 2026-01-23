@@ -1,30 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readFile, writeFile } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js'
 
-const AGENTS_DIR = '/Users/benmichals/ClaudeCodeTest/.claude/agents'
+// Create a Supabase client for server-side operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-function getAgentFilePath(agentId: string): string {
-  // Convert agent ID to filename (e.g., 'pipeline_manager' -> 'pipeline-manager.md')
-  const filename = agentId.replace(/_/g, '-')
-  return path.join(AGENTS_DIR, `${filename}.md`)
+function getSupabase() {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null
+  }
+  return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const agentId = searchParams.get('id')
-
-  if (!agentId) {
-    return NextResponse.json({ error: 'Agent ID required' }, { status: 400 })
-  }
-
-  const filePath = getAgentFilePath(agentId)
-
-  if (!existsSync(filePath)) {
-    // Return a template if file doesn't exist
-    const displayName = agentId.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-    const template = `# ${displayName}
+// Default agent config template
+function getDefaultTemplate(agentId: string): string {
+  const displayName = agentId.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  return `# ${displayName}
 
 ## Role
 [Describe the agent's role]
@@ -43,12 +34,42 @@ export async function GET(request: NextRequest) {
 ## Handoff Triggers
 [When to engage this agent]
 `
-    return NextResponse.json({ content: template, isNew: true })
+}
+
+export async function GET(request: NextRequest) {
+  const supabase = getSupabase()
+  const { searchParams } = new URL(request.url)
+  const agentId = searchParams.get('id')
+
+  if (!agentId) {
+    return NextResponse.json({ error: 'Agent ID required' }, { status: 400 })
+  }
+
+  if (!supabase) {
+    // Return default template for local development
+    return NextResponse.json({
+      content: getDefaultTemplate(agentId),
+      isNew: true,
+      warning: 'Supabase not configured - using default template',
+    })
   }
 
   try {
-    const content = await readFile(filePath, 'utf-8')
-    return NextResponse.json({ content })
+    const { data, error } = await supabase
+      .from('dashboard_agent_configs')
+      .select('config_content')
+      .eq('agent_id', agentId)
+      .single()
+
+    if (error || !data) {
+      // Return default template if no config exists
+      return NextResponse.json({
+        content: getDefaultTemplate(agentId),
+        isNew: true,
+      })
+    }
+
+    return NextResponse.json({ content: data.config_content })
   } catch (error) {
     console.error('Error reading agent config:', error)
     return NextResponse.json({ error: 'Failed to read config' }, { status: 500 })
@@ -56,6 +77,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase()
+
   try {
     const { id, content } = await request.json()
 
@@ -63,13 +86,61 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Agent ID and content required' }, { status: 400 })
     }
 
-    const filePath = getAgentFilePath(id)
+    if (!supabase) {
+      return NextResponse.json({
+        success: true,
+        warning: 'Supabase not configured - config not persisted',
+      })
+    }
 
-    await writeFile(filePath, content, 'utf-8')
+    const { error } = await supabase
+      .from('dashboard_agent_configs')
+      .upsert({
+        agent_id: id,
+        config_content: content,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,agent_id',
+      })
+
+    if (error) {
+      console.error('Failed to save agent config:', error)
+      return NextResponse.json({ error: 'Failed to save config' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error writing agent config:', error)
     return NextResponse.json({ error: 'Failed to save config' }, { status: 500 })
+  }
+}
+
+// Get all agent configs
+export async function PUT(request: NextRequest) {
+  const supabase = getSupabase()
+
+  if (!supabase) {
+    return NextResponse.json({
+      configs: [],
+      warning: 'Supabase not configured',
+    })
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('dashboard_agent_configs')
+      .select('agent_id, config_content, updated_at')
+
+    if (error) {
+      console.error('Failed to fetch agent configs:', error)
+      return NextResponse.json({ error: 'Failed to fetch configs' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      configs: data || [],
+    })
+  } catch (error) {
+    console.error('Error fetching agent configs:', error)
+    return NextResponse.json({ error: 'Failed to fetch configs' }, { status: 500 })
   }
 }

@@ -231,47 +231,49 @@ export function NotificationBar() {
       </AnimatePresence>
 
       {/* Expanded Modal */}
-      {mounted && isExpanded && createPortal(
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsExpanded(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 9998,
-              background: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(4px)',
-            }}
-          />
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isExpanded && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsExpanded(false)}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 9998,
+                  background: 'rgba(0, 0, 0, 0.6)',
+                  backdropFilter: 'blur(4px)',
+                }}
+              />
 
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 9999,
-              width: '90%',
-              maxWidth: '500px',
-              maxHeight: '70vh',
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: '20px',
-              boxShadow: '0 32px 80px -20px rgba(0, 0, 0, 0.6)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-            }}
-          >
+              {/* Modal - Centered on page */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                style={{
+                  position: 'fixed',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 9999,
+                  width: '90%',
+                  maxWidth: '500px',
+                  maxHeight: '70vh',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: '20px',
+                  boxShadow: '0 32px 80px -20px rgba(0, 0, 0, 0.6)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
             {/* Header */}
             <div
               style={{
@@ -373,12 +375,14 @@ export function NotificationBar() {
                     <EventItem key={event.id} event={event} />
                   ))
                 )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        </>,
-        document.body
-      )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>,
+      document.body
+    )}
     </>
   )
 }
