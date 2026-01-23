@@ -38,6 +38,10 @@ export interface PipelineProject {
   title: string;
   subtitle?: string;
   slug?: string; // Short URL slug (e.g., "postpilot" instead of full title)
+  logoUrl?: string; // Product logo image URL
+  backgroundColor?: string; // Page background color (hex)
+  backgroundPreset?: 'none' | 'aurora' | 'nebula' | 'ember' | 'ocean' | 'midnight'; // Animated gradient preset
+  heroBackgroundImage?: string; // Hero section background image URL
   stage: string;
   stageIndex: number;
   status: 'Not Started' | 'In Progress' | 'Blocked' | 'Review' | 'Complete';
@@ -56,6 +60,7 @@ export interface PipelineProject {
     spec: string | null;
     architecture: string | null;
     design: string | null;
+    codebase: string | null;
     testReport: string | null;
     securityReport: string | null;
     documentation: string | null;
@@ -145,7 +150,7 @@ export const STAGES: Stage[] = [
     icon: 'code',
     color: 'yellow',
     agent: 'Developer',
-    deliverableKey: null,
+    deliverableKey: 'codebase',
     description: 'Build and deploy application'
   },
   {
@@ -402,6 +407,7 @@ export type AgentEventType =
   | 'agent_action'
   | 'error'
   | 'delegation'
+  | 'pipeline_started'
 
 export interface AgentEvent {
   id: string
@@ -413,6 +419,16 @@ export interface AgentEvent {
   data?: Record<string, unknown>
 }
 
+// CEO Action Types (imported inline to avoid circular deps)
+export type CEOActionCategory = 'navigation' | 'project' | 'pipeline' | 'task' | 'ui'
+
+export interface CEOActionType {
+  id: string
+  label: string
+  category: CEOActionCategory
+  payload?: Record<string, unknown>
+}
+
 // Message Types (for chat)
 export interface Message {
   id: string
@@ -421,6 +437,7 @@ export interface Message {
   timestamp: Date
   agentId?: AgentId
   targetAgentId?: AgentId  // Who user is talking to (null = CEO)
+  actions?: CEOActionType[]  // Optional action buttons for CEO responses
 }
 
 // Alias for backward compatibility
@@ -441,4 +458,17 @@ export interface TaskFilters {
   projectId?: string | null
   status?: TaskStatus | null
   priority?: TaskPriority | null
+}
+
+// Pipeline Execution Status for orchestration
+export type PipelineExecutionStatus = 'idle' | 'running' | 'paused' | 'stopped'
+
+// Pipeline execution state stored per project
+export interface PipelineExecutionState {
+  projectId: string
+  status: PipelineExecutionStatus
+  currentTaskId: string | null
+  currentStageIndex: number
+  startedAt: Date | null
+  pausedAt: Date | null
 }
